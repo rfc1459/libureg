@@ -2,7 +2,11 @@
  * Based on code by Russ Cox.
  * Use of this code is governed by a BSD-style license
  */
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
+#include <assert.h>
 #include "ureg.h"
 
 typedef struct Thread Thread;

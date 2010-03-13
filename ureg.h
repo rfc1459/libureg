@@ -6,12 +6,6 @@
 #ifndef INCLUDED_ureg_h
 #define INCLUDED_ureg_h
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdarg.h>
-#include <assert.h>
-
 typedef struct Regexp Regexp;
 typedef struct Prog Prog;
 typedef struct Inst Inst;
