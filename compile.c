@@ -11,9 +11,8 @@
 #define UREG_INTERNAL
 #include "ureg-internal.h"
 
-static Inst *pc;
 static int count(Regexp *);
-static void emit(Regexp *);
+static void emit(Regexp *, Inst **);
 
 /* Compile an AST into an instruction stream */
 Prog*
@@ -21,12 +20,13 @@ compile(Regexp *r)
 {
 	int n;
 	Prog *p;
+	Inst *pc;
 	
 	n = count(r) + 1;
 	p = (Prog *)mal(sizeof(Prog) + n*sizeof(p->start[0]));
 	p->start = (Inst *)(p+1);
 	pc = p->start;
-	emit(r);
+	emit(r, &pc);
 	pc->opcode = Match;
 	pc++;
 	p->len = pc - p->start;
@@ -66,7 +66,7 @@ count(Regexp *r)
 }
 
 static void
-emit(Regexp *r)
+emit(Regexp *r, Inst **pc)
 {
 	Inst *p1, *p2, *t;
 	
@@ -77,46 +77,46 @@ emit(Regexp *r)
 			break;
 			
 		case Alt:
-			pc->opcode = Split;
-			p1 = pc++;
-			p1->x = pc;
-			emit(r->left);
-			pc->opcode = Jmp;
-			p2 = pc++;
-			p1->y = pc;
-			emit(r->right);
-			p2->x = pc;
+			(*pc)->opcode = Split;
+			p1 = (*pc)++;
+			p1->x = *pc;
+			emit(r->left, pc);
+			(*pc)->opcode = Jmp;
+			p2 = (*pc)++;
+			p1->y = *pc;
+			emit(r->right, pc);
+			p2->x = *pc;
 			break;
 		
 		case Cat:
-			emit(r->left);
-			emit(r->right);
+			emit(r->left, pc);
+			emit(r->right, pc);
 			break;
 		
 		case Lit:
-			pc->opcode = Char;
-			pc->c = r->ch;
-			pc++;
+			(*pc)->opcode = Char;
+			(*pc)->c = r->ch;
+			(*pc)++;
 			break;
 		
 		case Dot:
-			pc->opcode = Any;
-			pc++;
+			(*pc)->opcode = Any;
+			(*pc)++;
 			break;
 		
 		case Range:
-			pc->opcode = Rng;
-			pc->lo = r->lo;
-			pc->hi = r->hi;
-			pc++;
+			(*pc)->opcode = Rng;
+			(*pc)->lo = r->lo;
+			(*pc)->hi = r->hi;
+			(*pc)++;
 			break;
 		
 		case Quest:
-			pc->opcode = Split;
-			p1 = pc++;
-			p1->x = pc;
-			emit(r->left);
-			p1->y = pc;
+			(*pc)->opcode = Split;
+			p1 = (*pc)++;
+			p1->x = *pc;
+			emit(r->left, pc);
+			p1->y = *pc;
 			if(r->n)
 			{
 				/* Non-greedy */
@@ -127,14 +127,14 @@ emit(Regexp *r)
 			break;
 			
 		case Star:
-			pc->opcode = Split;
-			p1 = pc++;
-			p1->x = pc;
-			emit(r->left);
-			pc->opcode = Jmp;
-			pc->x = p1;
-			pc++;
-			p1->y = pc;
+			(*pc)->opcode = Split;
+			p1 = (*pc)++;
+			p1->x = *pc;
+			emit(r->left, pc);
+			(*pc)->opcode = Jmp;
+			(*pc)->x = p1;
+			(*pc)++;
+			p1->y = *pc;
 			if(r->n)
 			{
 				t = p1->x;
@@ -144,13 +144,13 @@ emit(Regexp *r)
 			break;
 			
 		case Plus:
-			p1 = pc;
-			emit(r->left);
-			pc->opcode = Split;
-			pc->x = p1;
-			p2 = pc;
-			pc++;
-			p2->y = pc;
+			p1 = *pc;
+			emit(r->left, pc);
+			(*pc)->opcode = Split;
+			(*pc)->x = p1;
+			p2 = *pc;
+			(*pc)++;
+			p2->y = *pc;
 			if(r->n)
 			{
 				t = p2->x;
