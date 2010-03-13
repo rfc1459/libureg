@@ -1,0 +1,74 @@
+=======
+libuReg
+=======
+
+Introduction
+------------
+
+libuReg is a small regexp matching library based on Ken Thompson NFA method. It
+can run any valid regexp in linear time and constant stack size, even those
+considered to be pathological cases for backtracking-based matching engines.
+
+Requirements
+------------
+libuReg requires a C89-compliant C compiler (gcc is fine), GNU Bison, and
+CMake.
+
+The library has been tested on MacOSX 10.6 and FreeBSD 8.0, but should work on
+any modern POSIX-compliant operating system. Maybe it could made work under
+MinGW or Cygwin.
+
+Installation
+------------
+Right now, libuReg is designed for static linking and in-tree shipping.
+
+Usage with CMake-enabled projects
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Drop the libuReg sources in a subdirectory below your project root and add a
+reference in CMakeLists.txt:
+
+::
+ 
+ ADD_SUBDIRECTORY(libureg)
+ TARGET_LINK_LIBRARIES(your-target ureg)
+
+Usage with automake projects
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Sorry, guys, you're on your own...
+
+Syntax and limitations
+----------------------
+libuReg accepts **almost** the basic syntax of grep, with a few caveats:
+ * backreferences are not supported (sorry folks, they're NP-complete);
+ * capturing groups are not supported, they behave just like non-capturing
+   groups;
+ * POSIX named character classes are not supported **and never will be**;
+ * character classes are somewhat limited (no negation, no starting dash),
+   this will be fixed in a later release;
+ * special characters **MUST** be escaped when used in a character class
+   (lazyness on my account - will be fixed as well);
+ * no assertions (I didn't need them), all patterns are strictly unanchored;
+
+Please keep in mind this is **EXPERIMENTAL** code.
+
+Known bugs
+----------
+When a syntax error is encountered, the parser will call ``exit()`` instead of
+relying on a user-defined error callback.
+
+Development
+-----------
+Issue tracking, wiki and mercurial repository can be found at the `project's page <http://bitbucket.org/rfc1459/libureg/>`_.
+
+Credits
+-------
+
+**Author:** `Matteo Panella <morpheus@level28.org>`_.
+
+Heavily inspired by and based on `RE1 <http://code.google.com/p/re1/>`_ by Russ Cox.
+
+References
+----------
+ * `Implementing Regular expressions <http://swtch.com/~rsc/regexp/>`_
+ * `RE1 - toy regular expression implementation <http://code.google.com/p/re1/>`_
+ * `Plan 9 grep <http://swtch.com/usr/local/plan9/src/cmd/grep/>`_ (written by Ken Thompson)

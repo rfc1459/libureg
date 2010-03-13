@@ -1,0 +1,8 @@
+syntax: glob
+
+build
+*.o
+*.tab.c
+*.dSYM
+*~
+*.swp
