@@ -15,7 +15,7 @@ typedef struct ThreadList ThreadList;
 struct ThreadList
 {
 	int n;
-	Thread *t;
+	Thread t[1];
 };
 
 static Thread
@@ -28,8 +28,7 @@ thread(Inst *pc)
 static ThreadList*
 threadlist(int n)
 {
-	ThreadList *l = mal(sizeof(ThreadList));
-	l->t = mal(n * sizeof(Thread));
+	ThreadList *l = mal(sizeof(ThreadList) + n*sizeof(Thread));
 }
 
 static void
@@ -37,7 +36,6 @@ destroylist(ThreadList *l)
 {
 	if(l == NULL)
 		return;
-	free(l->t);
 	free(l);
 }
 
