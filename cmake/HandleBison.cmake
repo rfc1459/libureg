@@ -14,6 +14,7 @@ MACRO(ADD_BISON_SOURCE f_src f_dest)
 	ADD_CUSTOM_COMMAND(SOURCE ${f_src}
 		COMMAND ${BISON_EXECUTABLE}
 		ARGS ${f_src} -o ${f_dest}
-		OUTPUT ${f_dest})
+		OUTPUT ${f_dest}
+		DEPENDS ${f_src})
 	SET_SOURCE_FILES_PROPERTIES(${f_dest} GENERATED)
 ENDMACRO(ADD_BISON_SOURCE f_src f_dest)
