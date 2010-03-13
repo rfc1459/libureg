@@ -21,8 +21,8 @@ static Regexp *parsed_regexp;
 %type	<re>		alt concat repeat single
 %type	<re>		class range
 %token	<val>		LCHAR LDASH 
-%token				CLPAREN CRPAREN LLPAREN LRPAREN LALT LSTAR LPLUS LQUES
-%token				LDOT LBAD EOL
+%token			CLPAREN CRPAREN LLPAREN LRPAREN LALT LSTAR LPLUS LQUES
+%token			LDOT LBAD EOL
 %%
 
 /* Parse a regexp and build the corresponding AST */
