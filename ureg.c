@@ -24,18 +24,18 @@ struct ureg_regexp_t
 
 /* Compile a regexp and return an handler */
 ureg_regexp
-ureg_compile(const char *src, unsigned int flags)
+ureg_compile(const char *pattern, unsigned int flags)
 {
 	Regexp *r;
 	struct ureg_regexp_t *res;
-	if(src == NULL)
+	if(pattern == NULL)
 	{
 		/* TODO: ureg_errno = UREG_ERR_NULL; */
 		return NULL;
 	}
 
 	/* Parse the regexp and build the equivalent AST */
-	if((r = parse(src)) == NULL)
+	if((r = parse(pattern)) == NULL)
 	{
 		/* TODO: ureg_errno = UREG_ERR_SYNTAX; */
 		return NULL;
@@ -59,7 +59,7 @@ ureg_compile(const char *src, unsigned int flags)
 	
 	/* Success, throw away the AST, duplicate text form and return */
 	reg_destroy(r);
-	res->txt = strdup(src); /* FIXME: check for OOM */
+	res->txt = strdup(pattern); /* FIXME: check for OOM */
 	/* TODO: ureg_errno = UREG_SUCCESS; */
 	return res;
 }
