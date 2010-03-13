@@ -8,7 +8,8 @@
 #include <string.h>
 #include <stdarg.h>
 #include <assert.h>
-#include "ureg.h"
+#define UREG_INTERNAL
+#include "ureg-internal.h"
 
 static Inst *pc;
 static int count(Regexp *);

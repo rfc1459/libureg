@@ -7,7 +7,8 @@
 #include <string.h>
 #include <stdarg.h>
 #include <assert.h>
-#include "ureg.h"
+#define UREG_INTERNAL
+#include "ureg-internal.h"
 
 typedef struct Thread Thread;
 struct Thread
@@ -65,12 +66,12 @@ addthread(ThreadList *l, Thread t, int gen)
 }
 
 int
-thompsonvm(Prog *prog, char *input)
+thompsonvm(Prog *prog, const char *input)
 {
 	int i, len, matched, gen;
 	ThreadList *clist, *nlist, *tmp;
 	Inst *pc;
-	char *sp;
+	const char *sp;
 	
 	len = prog->len;
 	clist = threadlist(len);

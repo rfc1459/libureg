@@ -8,7 +8,8 @@
 #include <string.h>
 #include <stdarg.h>
 #include <assert.h>
-#include "ureg.h"
+#define UREG_INTERNAL
+#include "ureg-internal.h"
 
 static int yylex(void);
 static void yyerror(char*);
@@ -158,7 +159,7 @@ range:
 ;
 %%
 
-static char *input;
+static const char *input;
 static Regexp *parsed_regexp;
 static int nparen;
 
@@ -239,7 +240,7 @@ yyerror(char *s)
 }
 
 Regexp*
-parse(char *s)
+parse(const char *s)
 {
 	Regexp *dotstar;
 	

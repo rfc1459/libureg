@@ -13,6 +13,7 @@ SET(ureg_LIB_SRCS
 compile.c
 ${PROJECT_BINARY_DIR}/parse.c
 thompsonvm.c
+ureg.c
 )
 
 ADD_BISON_SOURCE(${PROJECT_SOURCE_DIR}/parse.y ${PROJECT_BINARY_DIR}/parse.c)
