@@ -39,18 +39,20 @@ Sorry, guys, you're on your own...
 
 Syntax and limitations
 ----------------------
-libuReg accepts **almost** the basic syntax of grep, with a few caveats:
+libuReg has mostly the same syntax of POSIX EREs, with a few caveats:
  * backreferences are not supported (sorry folks, they're NP-complete);
  * capturing groups are not supported, they behave just like non-capturing
    groups;
- * POSIX named character classes are not supported **and never will be**;
- * character classes are somewhat limited (no negation, no starting dash),
-   this will be fixed in a later release;
- * special characters **MUST** be escaped when used in a character class
-   (lazyness on my account - will be fixed as well);
- * no assertions (I didn't need them), all patterns are strictly unanchored;
+ * POSIX named character classes are not supported and never will be;
+ * bracket expressions do not yet support negative match and there are some
+   quirks with META_CHAR tokens;
+ * backslash character must be escaped when used in a bracket expression;
+ * no assertions and anchors (I didn't need them), all patterns are strictly
+   unanchored;
+ * no counted repetitions (yet);
+ * non-greedy operators are supported, although they are mostly useless.
 
-Please keep in mind this is **EXPERIMENTAL** code.
+Please keep in mind this is experimental code code.
 
 Known bugs
 ----------

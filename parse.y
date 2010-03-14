@@ -22,12 +22,12 @@ static Regexp *parsed_regexp;
 	Regexp* re;
 }
 
-%type	<re>		line
-%type	<re>		alt concat repeat single
-%type	<re>		class range
-%token	<val>		LCHAR LDASH 
-%token			CLPAREN CRPAREN LLPAREN LRPAREN LALT LSTAR LPLUS LQUES
-%token			LDOT LBAD EOL
+%type	<re>	line
+%type	<re>	alt concat repeat single
+%type	<re>	class class1 range
+%type	<val>	csingle
+%token	<val>	LCHAR LDASH LLPAREN LRPAREN LALT LSTAR LPLUS LQUES LDOT
+%token		CLPAREN CRPAREN LBAD EOL
 %%
 
 /* Parse a regexp and build the corresponding AST */
@@ -114,8 +114,23 @@ single:
 
 /* Class grammar is oversimplified, this should REALLY be fixed */
 class:
+	class1
+|	LDASH
+	{
+		$$ = reg(Lit, NULL, NULL);
+		$$->ch = $1;
+	}
+|	LDASH class1
+	{
+		Regexp *r1 = reg(Lit, NULL, NULL);
+		r1->ch = $1;
+		$$ = reg(Alt, r1, $2);
+	}
+;
+
+class1:
 	range
-|	class range
+|	class1 range
 	{
 		$$ = reg(Alt, $1, $2);
 	}
@@ -127,12 +142,12 @@ class:
  * is mostly influenced by input length).
  */
 range:
-	LCHAR
+	csingle
 	{
 		$$ = reg(Lit, NULL, NULL);
 		$$->ch = $1;
 	}
-|	LCHAR LDASH LCHAR
+|	csingle LDASH csingle
 	{
 		/* Slight optimization: convert to Lit node if boundaries are equal */
 		if ($1 == $3)
@@ -157,6 +172,17 @@ range:
 		}
 	}
 ;
+
+csingle:
+	LCHAR
+|	LLPAREN
+|	LRPAREN
+|	LALT
+|	LSTAR
+|	LPLUS
+|	LQUES
+|	LDOT
+;
 %%
 
 static const char *input;
@@ -171,10 +197,10 @@ yylex(void)
 	if(input == NULL || *input == '\0')
 		return EOL;
 	c = *input++;
+	yylval.val = c;
 	switch(c)
 	{
 		default:
-			yylval.val = c;
 			s = LCHAR;
 			break;
 		case '\\':
@@ -213,7 +239,6 @@ yylex(void)
 			break;
 		case '-':
 			s = LDASH;
-			yylval.val = c;
 			break;
 	}
 	return s;
