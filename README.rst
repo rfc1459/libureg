@@ -44,9 +44,7 @@ libuReg has mostly the same syntax of POSIX EREs, with a few caveats:
  * capturing groups are not supported, they behave just like non-capturing
    groups;
  * POSIX named character classes are not supported and never will be;
- * bracket expressions do not yet support negative match and there are some
-   quirks with META_CHAR tokens;
- * backslash character must be escaped when used in a bracket expression;
+ * bracket expressions do not yet support negative matching;
  * no assertions and anchors (I didn't need them), all patterns are strictly
    unanchored;
  * no counted repetitions (yet);
@@ -75,3 +73,4 @@ References
  * `Implementing Regular expressions <http://swtch.com/~rsc/regexp/>`_
  * `RE1 - toy regular expression implementation <http://code.google.com/p/re1/>`_
  * `Plan 9 grep <http://swtch.com/usr/local/plan9/src/cmd/grep/>`_ (written by Ken Thompson)
+ * `The Single UNIX® Specification, Version 2 - Regular Expressions <http://www.opengroup.org/onlinepubs/007908799/xbd/re.html>`_

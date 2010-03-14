@@ -15,6 +15,15 @@ static int yylex(void);
 static void yyerror(char*);
 static Regexp *parsed_regexp;
 
+typedef enum lexer_state
+{
+	NORMAL,
+	BRACKET1,
+	BRACKET
+} lexer_state_t;
+
+static lexer_state_t lstate;
+
 %}
 
 %union {
@@ -24,10 +33,9 @@ static Regexp *parsed_regexp;
 
 %type	<re>	line
 %type	<re>	alt concat repeat single
-%type	<re>	class class1 range
-%type	<val>	csingle
+%type	<re>	bracket class range
 %token	<val>	LCHAR LDASH LLPAREN LRPAREN LALT LSTAR LPLUS LQUES LDOT
-%token		CLPAREN CRPAREN LBAD EOL
+%token		CLPAREN CRPAREN LBAD EOL RSEP
 %%
 
 /* Parse a regexp and build the corresponding AST */
@@ -35,6 +43,13 @@ static Regexp *parsed_regexp;
 line: alt EOL
 	{
 		parsed_regexp = $1;
+		return 1;
+	}
+|	LSTAR alt EOL
+	{
+		Regexp *r1 = reg(Lit, NULL, NULL);
+		r1->ch = $1;
+		parsed_regexp = reg(Cat, r1, $2);
 		return 1;
 	}
 ;
@@ -101,7 +116,7 @@ single:
 	{
 		$$ = reg(Dot, NULL, NULL);
 	}
-|	CLPAREN class CRPAREN
+|	CLPAREN bracket CRPAREN
 	{
 		$$ = $2;
 		/* FIXME: coalesce overlapping ranges and remove duplicates */
@@ -113,14 +128,14 @@ single:
 ;
 
 /* Class grammar is oversimplified, this should REALLY be fixed */
-class:
-	class1
+bracket:
+	class
 |	LDASH
 	{
 		$$ = reg(Lit, NULL, NULL);
 		$$->ch = $1;
 	}
-|	LDASH class1
+|	LDASH class
 	{
 		Regexp *r1 = reg(Lit, NULL, NULL);
 		r1->ch = $1;
@@ -128,9 +143,9 @@ class:
 	}
 ;
 
-class1:
+class:
 	range
-|	class1 range
+|	class range
 	{
 		$$ = reg(Alt, $1, $2);
 	}
@@ -142,12 +157,12 @@ class1:
  * is mostly influenced by input length).
  */
 range:
-	csingle
+	LCHAR
 	{
 		$$ = reg(Lit, NULL, NULL);
 		$$->ch = $1;
 	}
-|	csingle LDASH csingle
+|	LCHAR RSEP LCHAR
 	{
 		/* Slight optimization: convert to Lit node if boundaries are equal */
 		if ($1 == $3)
@@ -172,22 +187,11 @@ range:
 		}
 	}
 ;
-
-csingle:
-	LCHAR
-|	LLPAREN
-|	LRPAREN
-|	LALT
-|	LSTAR
-|	LPLUS
-|	LQUES
-|	LDOT
-;
 %%
 
 static const char *input;
 static Regexp *parsed_regexp;
-static int nparen;
+static lexer_state_t lstate;
 
 static int
 yylex(void)
@@ -198,48 +202,85 @@ yylex(void)
 		return EOL;
 	c = *input++;
 	yylval.val = c;
-	switch(c)
+	switch(lstate)
 	{
-		default:
-			s = LCHAR;
-			break;
-		case '\\':
-			if(*input == '\0')
-				return LBAD;
-			c = *input++;
-			yylval.val = c;
-			s = LCHAR;
-			break;
-		case '[':
-			s = CLPAREN;
-			break;
-		case ']':
-			s = CRPAREN;
-			break;
-		case '(':
-			s = LLPAREN;
-			break;
-		case ')':
-			s = LRPAREN;
-			break;
-		case '|':
-			s = LALT;
-			break;
-		case '*':
-			s = LSTAR;
-			break;
-		case '+':
-			s = LPLUS;
-			break;
-		case '?':
-			s = LQUES;
-			break;
-		case '.':
-			s = LDOT;
-			break;
-		case '-':
-			s = LDASH;
-			break;
+	case NORMAL:
+		switch(c)
+		{
+			default:
+				s = LCHAR;
+				break;
+			case '\\':
+				if(*input == '\0')
+					return LBAD;
+				c = *input++;
+				yylval.val = c;
+				s = LCHAR;
+				break;
+			case '[':
+				s = CLPAREN;
+				lstate = BRACKET1;
+				break;
+			case ']':
+				s = CRPAREN;
+				break;
+			case '(':
+				s = LLPAREN;
+				break;
+			case ')':
+				s = LRPAREN;
+				break;
+			case '|':
+				s = LALT;
+				break;
+			case '*':
+				s = LSTAR;
+				break;
+			case '+':
+				s = LPLUS;
+				break;
+			case '?':
+				s = LQUES;
+				break;
+			case '.':
+				s = LDOT;
+				break;
+			case '-':
+				s = LDASH;
+				break;
+		}
+		break;
+	case BRACKET1:
+		switch(c)
+		{
+			case ']':
+			case '-':
+			default:
+				s = LCHAR;
+				break;
+			
+		}
+		lstate = BRACKET;
+		break;
+	case BRACKET:
+		switch(c)
+		{
+			default:
+				s = LCHAR;
+				break;
+			case ']':
+				s = CRPAREN;
+				lstate = NORMAL;
+				break;
+			case '-':
+				/* Peek next character */
+				if(*input == ']')
+					s = LCHAR;
+				else
+					s = RSEP;
+				break;
+		}
+		break;
 	}
 	return s;
 }
@@ -271,6 +312,7 @@ parse(const char *s)
 	
 	input = s;
 	parsed_regexp = NULL;
+	lstate = NORMAL;
 	if(yyparse() != 1)
 		yyerror("Syntax error");
 	if(parsed_regexp == NULL)
