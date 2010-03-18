@@ -5,10 +5,7 @@
  * Use of this code is governed by a BSD-style license
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
+#include "stdinc.h"
 #include "ureg.h"
 #define UREG_INTERNAL
 #include "ureg-internal.h"

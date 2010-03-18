@@ -14,10 +14,10 @@ Requirements
 libuReg requires a C89-compliant C compiler (gcc is fine), GNU Bison, and
 CMake.
 
-The library has been tested on MacOSX 10.6 and FreeBSD 8.0, but should work on
-any modern POSIX-compliant operating system. Maybe it could work under MinGW
-or Cygwin, but you're pretty much on your own (sorry, I don't own a Win32
-system).
+The library has been tested on MacOSX 10.6, FreeBSD 8.0 and Debian 5.0, but it
+should work on any modern POSIX-compliant operating system. Maybe it could work
+under MinGW or Cygwin, but you're pretty much on your own (sorry, I don't own a
+Win32 system).
 
 Installation
 ------------

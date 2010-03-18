@@ -2,11 +2,9 @@
  * Based on code by Russ Cox.
  * Use of this code is governed by a BSD-style license
  */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdarg.h>
-#include <assert.h>
+
+#include "stdinc.h"
+#include "ureg.h"
 #define UREG_INTERNAL
 #include "ureg-internal.h"
 
@@ -30,20 +28,6 @@ thread(Inst *pc)
 	return t;
 }
 
-static ThreadList*
-threadlist(int n)
-{
-	ThreadList *l = mal(sizeof(ThreadList) + n*sizeof(Thread));
-}
-
-static void
-destroylist(ThreadList *l)
-{
-	if(l == NULL)
-		return;
-	free(l);
-}
-
 static void
 addthread(ThreadList *l, Thread t, int gen)
 {
@@ -65,6 +49,9 @@ addthread(ThreadList *l, Thread t, int gen)
 	}
 }
 
+/* Don't waste heap */
+#define threadlist(n)		(ThreadList *)alloca(sizeof(ThreadList) + (n)*sizeof(Thread))
+
 int
 thompsonvm(Prog *prog, const char *input)
 {
@@ -76,6 +63,13 @@ thompsonvm(Prog *prog, const char *input)
 	len = prog->len;
 	clist = threadlist(len);
 	nlist = threadlist(len);
+	
+	if (clist == NULL || nlist == NULL)
+	{
+		ureg_errno = UREG_ERR_NOMEM;
+		return -1;
+	}
+	clist->n = nlist->n = 0;
 	
 	gen = 1;
 	addthread(clist, thread(prog->start), gen);
@@ -116,7 +110,5 @@ BreakFor:
 		if(*sp == '\0')
 			break;
 	}
-	destroylist(nlist);
-	destroylist(clist);
 	return matched;
 }

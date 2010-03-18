@@ -11,11 +11,19 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 SET(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
 #### External CMake modules ####
-INCLUDE(HandleBison)
 INCLUDE(TestMacros)
+INCLUDE(CheckIncludeFile)
+
+#### CMake packages ####
+FIND_PACKAGE(BISON)
 
 #### Platform tests ####
-FIND_BISON()
+CHECK_INCLUDE_FILE(stdlib.h HAVE_STDLIB_H)
+CHECK_INCLUDE_FILE(strings.h HAVE_STRINGS_H)
+CHECK_INCLUDE_FILE(string.h HAVE_STRING_H)
+CHECK_INCLUDE_FILE(alloca.h HAVE_ALLOCA_H)
+
+CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/setup.h.cmake ${PROJECT_BINARY_DIR}/setup.h)
 
 #### Enable CTest framework ####
 ENABLE_TESTING()
@@ -24,13 +32,13 @@ ENABLE_TESTING()
 INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR} ${PROJECT_SOURCE_DIR})
 
 #### libureg target ####
+BISON_TARGET(uregParser parse.y ${PROJECT_BINARY_DIR}/parse.c)
 SET(ureg_LIB_SRCS
 compile.c
-${PROJECT_BINARY_DIR}/parse.c
+${BISON_uregParser_OUTPUTS}
 thompsonvm.c
 ureg.c
 )
-ADD_BISON_SOURCE(${PROJECT_SOURCE_DIR}/parse.y ${PROJECT_BINARY_DIR}/parse.c)
 ADD_LIBRARY(ureg STATIC ${ureg_LIB_SRCS})
 
 #### Test targets ####
@@ -49,8 +57,5 @@ ADD_TEST_TARGET(api-test tests/api.c)
 # Compiler tests - TBD
 
 # Full API tests
-ADD_TEST(NAME basic-match
-	COMMAND api-test "he.+o" "hello world" 1)
-
-ADD_TEST(NAME basic-nomatch
-	COMMAND api-test "g.*bye" "hello there!" 0)
+ADD_TEST(basic-match api-test "he.+o" "hello world" 1)
+ADD_TEST(basic-nomatch api-test "g.*bye" "hello there!" 0)
