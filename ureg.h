@@ -10,7 +10,7 @@
 #define INCLUDED_ureg_h
 
 /**
- * @addtogroup types
+ * @addtogroup types Types and variables
  */
 /** @{ */
 
@@ -20,6 +20,26 @@
  *  @sa ureg_compile(), ureg_free()
  */
 typedef struct ureg_regexp_t *ureg_regexp;
+
+/** @brief Error codes.
+ *  @sa ureg_errno
+ */
+typedef enum ureg_error_t
+{
+	/** @brief No error */
+	UREG_NOERROR = 0,
+	/** @brief Invalid argument (NULL pointer) */	
+	UREG_ERR_NULL,
+	/** @brief Out of memory */
+	UREG_ERR_NOMEM,
+	/** @brief Syntax error */
+	UREG_ERR_SYNTAX,
+	/** @brief Compiler error, please report this */
+	UREG_ERR_COMPILE
+} ureg_error_t;
+
+/** @brief Last error code */
+extern ureg_error_t ureg_errno;
 
 /** @} */
 

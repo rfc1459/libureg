@@ -22,6 +22,8 @@ struct ureg_regexp_t
 	Prog *p;
 };
 
+ureg_error_t ureg_errno = UREG_NOERROR;
+
 /* Compile a regexp and return an handler */
 ureg_regexp
 ureg_compile(const char *pattern, unsigned int flags)
@@ -30,20 +32,20 @@ ureg_compile(const char *pattern, unsigned int flags)
 	struct ureg_regexp_t *res;
 	if(pattern == NULL)
 	{
-		/* TODO: ureg_errno = UREG_ERR_NULL; */
+		ureg_errno = UREG_ERR_NULL;
 		return NULL;
 	}
 
 	/* Parse the regexp and build the equivalent AST */
 	if((r = parse(pattern)) == NULL)
 	{
-		/* TODO: ureg_errno = UREG_ERR_SYNTAX; */
+		ureg_errno = UREG_ERR_SYNTAX;
 		return NULL;
 	}
 	res = (struct ureg_regexp_t *)malloc(sizeof(struct ureg_regexp_t));
 	if(res == NULL)
 	{
-		/* TODO: ureg_errno = UREG_ERR_NOMEM; */
+		ureg_errno = UREG_ERR_NOMEM;
 		reg_destroy(r);
 		return NULL;
 	}
@@ -51,7 +53,7 @@ ureg_compile(const char *pattern, unsigned int flags)
 	/* Compile the AST into the final NFA program */
 	if((res->p = compile(r)) == NULL)
 	{
-		/* TODO: ureg_errno = UREG_ERR_COMPILE; */
+		ureg_errno = UREG_ERR_COMPILE;
 		reg_destroy(r);
 		free(res);
 		return NULL;
@@ -60,7 +62,7 @@ ureg_compile(const char *pattern, unsigned int flags)
 	/* Success, throw away the AST, duplicate text form and return */
 	reg_destroy(r);
 	res->txt = strdup(pattern); /* FIXME: check for OOM */
-	/* TODO: ureg_errno = UREG_SUCCESS; */
+	ureg_errno = UREG_NOERROR;
 	return res;
 }
 
@@ -70,7 +72,7 @@ ureg_free(ureg_regexp handle)
 {
 	if(handle == NULL)
 	{
-		/* TODO: ureg_errno = UREG_ERR_NULL; */
+		ureg_errno = UREG_ERR_NULL;
 		return;
 	}
 	if(handle->txt)
@@ -78,7 +80,7 @@ ureg_free(ureg_regexp handle)
 	if(handle->p)
 		free(handle->p);
 	free(handle);
-	/* TODO: ureg_errno = UREG_SUCCESS; */
+	ureg_errno = UREG_NOERROR;
 }
 
 /* Match a string against a regexp */
@@ -87,10 +89,10 @@ ureg_match(ureg_regexp handle, const char *s)
 {
 	if(handle == NULL || s == NULL || handle->p == NULL)
 	{
-		/* TODO: ureg_errno = UREG_ERR_NULL; */
+		ureg_errno = UREG_ERR_NULL;
 		return -1;
 	}
-	/* TODO: ureg_errno = UREG_SUCCESS; */
+	ureg_errno = UREG_NOERROR;
 	return thompsonvm(handle->p, s);
 }
 
@@ -100,9 +102,9 @@ ureg_txt(ureg_regexp handle)
 {
 	if(handle == NULL || handle->txt == NULL)
 	{
-		/* TODO: ureg_errno = UREG_ERR_NULL; */
+		ureg_errno = UREG_ERR_NULL;
 		return NULL;
 	}
-	/* TODO: ureg_errno = UREG_SUCCESS; */
+	ureg_errno = UREG_NOERROR;
 	return handle->txt;
 }
