@@ -49,8 +49,11 @@ addthread(ThreadList *l, Thread t, int gen)
 	}
 }
 
-/* Don't waste heap */
-#define threadlist(n)		(ThreadList *)alloca(sizeof(ThreadList) + (n)*sizeof(Thread))
+static ThreadList*
+threadlist(size_t len)
+{
+	return (ThreadList *)malloc(sizeof(ThreadList) + len*sizeof(Thread));
+}
 
 int
 thompsonvm(Prog *prog, const char *input)
@@ -110,5 +113,7 @@ BreakFor:
 		if(*sp == '\0')
 			break;
 	}
+	free(clist);
+	free(nlist);
 	return matched;
 }

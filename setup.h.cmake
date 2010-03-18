@@ -8,7 +8,6 @@
 
 /* Include files */
 #cmakedefine HAVE_STDLIB_H 1
-#cmakedefine HAVE_ALLOCA_H 1
 #cmakedefine HAVE_STDLIB_H 1
 #cmakedefine HAVE_STRING_H 1
 #cmakedefine HAVE_STRINGS_H 1
