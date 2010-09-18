@@ -96,7 +96,7 @@ thompsonvm(Prog *prog, const char *input)
 					if(*sp < pc->lo || *sp > pc->hi)
 						break;
 				case Any:
-					if(*sp == 0)
+					if(*sp == '\0')
 						break;
 					addthread(nlist, thread(pc+1), gen);
 					break;
@@ -106,12 +106,13 @@ thompsonvm(Prog *prog, const char *input)
 			}
 		}
 BreakFor:
+		/* Exit loop on string end or positive match */
+		if(*sp == '\0' || matched)
+			break;
 		tmp = clist;
 		clist = nlist;
 		nlist = tmp;
 		nlist->n = 0;
-		if(*sp == '\0')
-			break;
 	}
 	free(clist);
 	free(nlist);
