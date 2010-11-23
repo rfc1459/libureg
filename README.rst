@@ -48,7 +48,7 @@ libuReg has mostly the same syntax of POSIX EREs, with a few caveats:
  * no counted repetitions (yet);
  * non-greedy operators are supported, although they are mostly useless.
 
-Please keep in mind this is experimental code code.
+Please keep in mind this is experimental code.
 
 Known bugs
 **********
