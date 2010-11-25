@@ -44,11 +44,22 @@ struct CountedRepVal {
     int high;
 };
 
+#ifndef NDEBUG
+#define trace_reg_destroy(a)                                                \
+    do {                                                                    \
+        if (yyTraceFILE)                                                    \
+            fprintf(yyTraceFILE, "%sdestroying %p\n", yyTracePrompt, a);    \
+        reg_destroy(a);                                                     \
+    } while (0)
+#else
+#define trace_reg_destroy(a)    reg_destroy(a)
+#endif /* !defined(NDEBUG) */
+
 }
 
 /* Here comes the grammar */
 input ::= regexp(A).                { pParse->ast_root = A; }
-%destructor regexp { reg_destroy($$); }
+%destructor regexp { trace_reg_destroy($$); }
 regexp(A) ::= alt(B).               { A = B; }
 regexp(A) ::= STAR(B) alt(C).   {
     Regexp *r1 = reg(Lit, NULL, NULL);
@@ -57,17 +68,17 @@ regexp(A) ::= STAR(B) alt(C).   {
 }
 
 /* Alternation */
-%destructor alt { reg_destroy($$); }
+%destructor alt { trace_reg_destroy($$); }
 alt(A) ::= alt(B) ALT concat(C).    { A = reg(Alt, B, C); }
 alt(A) ::= concat(B).               { A = B; }
 
 /* Concatenation */
-%destructor concat { reg_destroy($$); }
+%destructor concat { trace_reg_destroy($$); }
 concat(A) ::= concat(B) repeat(C).  { A = reg(Cat, B, C); }
 concat(A) ::= repeat(B).            { A = B; }
 
 /* Repetition */
-%destructor repeat { reg_destroy($$); }
+%destructor repeat { trace_reg_destroy($$); }
 repeat(A) ::= single(B).            { A = B; }
 /* Zero or more */
 repeat(A) ::= single(B) STAR.       { A = reg(Star, B, NULL); }
@@ -112,7 +123,7 @@ count(A) ::= COMMA INTEGER(B).              { A.low = -1; A.high =  B; }
 count(A) ::= INTEGER(B) COMMA INTEGER(C).   { A.low =  B; A.high =  C; }
 
 /* Single character match */
-%destructor single { reg_destroy($$); }
+%destructor single { trace_reg_destroy($$); }
 single(A) ::= LITERAL(B). {
     A = reg(Lit, NULL, NULL);
     A->ch = B;
@@ -124,16 +135,16 @@ single(A) ::= LBRACKET bracketexp(B) RBRACKET.  { A = B; }
 single(A) ::= LPAREN alt(B) RPAREN.             { A = B; }
 
 /* Oversimplified bracket expression grammar */
-%destructor bracketexp { reg_destroy($$); }
+%destructor bracketexp { trace_reg_destroy($$); }
 bracketexp(A) ::= class(B).         { A = B; }
 
 /* Character class */
-%destructor class { reg_destroy($$); }
+%destructor class { trace_reg_destroy($$); }
 class(A) ::= class(B) range(C).     { A = reg(Alt, B, C); }
 class(A) ::= range(B).              { A = B; }
 
 /* Range expression */
-%destructor range { reg_destroy($$); }
+%destructor range { trace_reg_destroy($$); }
 range(A) ::= LITERAL(B). {
     A = reg(Lit, NULL, NULL);
     A->ch = B;

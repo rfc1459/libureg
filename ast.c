@@ -25,7 +25,10 @@ parse(const char *s)
 	char c;
 	lexer_state_t lstate = NORMAL;
 	memset((void *)&pParse, '\0', sizeof(pParse));
-	
+
+#if !defined(NDEBUG) && defined(TRACE_PARSER)
+	uregParserTrace(stderr, "uregParser -> ");
+#endif
 	if (s == NULL)
 		return NULL;
 	parser = uregParserAlloc(malloc);
@@ -154,7 +157,9 @@ parse(const char *s)
 		uregParser(parser, token, value, &pParse);
 		c = *s++;
 	}
-	uregParser(parser, 0, 0, &pParse);
+	/* There's no need to emit $ after a syntax error */
+	if (!pParse.parseError)
+		uregParser(parser, 0, 0, &pParse);
 
 #ifndef NDEBUG	
 	if (!pParse.parseError && pParse.ast_root == NULL)
@@ -164,6 +169,11 @@ parse(const char *s)
 #endif
 
 	uregParserFree(parser, free);
+
+#if !defined(NDEBUG) && defined(TRACE_PARSER)
+	uregParserTrace(NULL, NULL);
+#endif
+
 	if (pParse.parseError)
 	{
 		if (pParse.ast_root)
