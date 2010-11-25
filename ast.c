@@ -19,6 +19,7 @@ typedef enum lexer_state
 Regexp*
 parse(const char *s)
 {
+	Regexp *dotstar;
 	Parse pParse;
 	void *parser;
 	int value, token;
@@ -180,7 +181,10 @@ parse(const char *s)
 			reg_destroy(pParse.ast_root);
 		return NULL;
 	}
-	return pParse.ast_root;
+	/* Change AST root to "Cat(NgStar(Dot), ast_root)" */
+	dotstar = reg(Star, reg(Dot, NULL, NULL), NULL);
+	dotstar->n = 1;
+	return reg(Cat, dotstar, pParse.ast_root);
 }
 
 /* FIXME: perform better error reporting, shall we? */
