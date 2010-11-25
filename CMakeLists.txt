@@ -63,7 +63,7 @@ ADD_TEST_TARGET(api-test tests/api.c)
 # Full API tests
 ADD_TEST(basic-match api-test "he.+o" "hello world" 1)
 ADD_TEST(basic-nomatch api-test "g.*bye" "hello there!" 0)
-ADD_TEST(basic-alt-match api-test "(hello|goodbye) world" "hello world" 1)
+ADD_TEST(basic-alt-match api-test "(?:hello|goodbye) world" "hello world" 1)
 ADD_TEST(basic-alt-nomatch api-test "le hai mostrato il pupp?aruolo\\\\?" "no ma ho buone possibilita'" 0)
 ADD_TEST(basic-count-match api-test "a{7}b" "aaaaaaab" 1)
 ADD_TEST(basic-count-nomatch api-test "a{7}b" "ab" 0)

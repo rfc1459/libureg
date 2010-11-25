@@ -132,7 +132,7 @@ count(A) ::= INTEGER(B) COMMA INTEGER(C). {
 
 /* Single character match */
 %destructor single { trace_reg_destroy($$); }
-single(A) ::= LITERAL(B). {
+single(A) ::= COLON|LITERAL(B). {
     A = reg(Lit, NULL, NULL);
     A->ch = B;
 }
@@ -140,7 +140,14 @@ single(A) ::= DOT. {
     A = reg(Dot, NULL, NULL);
 }
 single(A) ::= LBRACKET bracketexp(B) RBRACKET.  { A = B; }
-single(A) ::= LPAREN alt(B) RPAREN.             { A = B; }
+/* Capturing group */
+single(A) ::= LPAREN alt(B) RPAREN. {
+    pParse->nparen++;
+    A = reg(Paren, B, NULL);
+    A->n = pParse->nparen;
+}
+/* Non-capturing group */
+single(A) ::= LPAREN QUES COLON alt(B) RPAREN.  { A = B; }
 
 /* Oversimplified bracket expression grammar */
 %destructor bracketexp { trace_reg_destroy($$); }
@@ -153,11 +160,11 @@ class(A) ::= range(B).              { A = B; }
 
 /* Range expression */
 %destructor range { trace_reg_destroy($$); }
-range(A) ::= LITERAL(B). {
+range(A) ::= COLON|LITERAL(B). {
     A = reg(Lit, NULL, NULL);
     A->ch = B;
 }
-range(A) ::= LITERAL(B) RSEP LITERAL(C). {
+range(A) ::= COLON|LITERAL(B) RSEP LITERAL(C). {
     /* Both ends of range expression are equal, transform them into a literal */
     if (B == C)
     {

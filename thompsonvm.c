@@ -46,6 +46,9 @@ addthread(ThreadList *l, Thread t, int gen)
 			addthread(l, thread(t.pc->x), gen);
 			addthread(l, thread(t.pc->y), gen);
 			break;
+		case Save:
+			addthread(l, thread(t.pc+1), gen);
+			break;
 	}
 }
 

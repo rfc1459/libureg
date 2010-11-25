@@ -19,7 +19,7 @@ typedef enum lexer_state
 Regexp*
 parse(const char *s)
 {
-	Regexp *dotstar;
+	Regexp *r, *dotstar;
 	Parse pParse;
 	void *parser;
 	int value, token;
@@ -27,7 +27,7 @@ parse(const char *s)
 	lexer_state_t lstate = NORMAL;
 	memset((void *)&pParse, '\0', sizeof(pParse));
 
-#if !defined(NDEBUG) && defined(TRACE_PARSER)
+#if !defined(NDEBUG) && defined(UREG_TRACE)
 	uregParserTrace(stderr, "uregParser -> ");
 #endif
 	if (s == NULL)
@@ -59,6 +59,9 @@ parse(const char *s)
 						c = *s++;
 						token = TK_LITERAL;
 						value = c;
+						break;
+					case ':':
+						token = TK_COLON;
 						break;
 					case '[':
 						token = TK_LBRACKET;
@@ -171,7 +174,7 @@ parse(const char *s)
 
 	uregParserFree(parser, free);
 
-#if !defined(NDEBUG) && defined(TRACE_PARSER)
+#if !defined(NDEBUG) && defined(UREG_TRACE)
 	uregParserTrace(NULL, NULL);
 #endif
 
@@ -181,10 +184,11 @@ parse(const char *s)
 			reg_destroy(pParse.ast_root);
 		return NULL;
 	}
-	/* Change AST root to "Cat(NgStar(Dot), ast_root)" */
+	/* Change AST root to "Cat(NgStar(Dot), Paren(ast_root))" */
+	r = reg(Paren, pParse.ast_root, NULL);
 	dotstar = reg(Star, reg(Dot, NULL, NULL), NULL);
 	dotstar->n = 1;
-	return reg(Cat, dotstar, pParse.ast_root);
+	return reg(Cat, dotstar, r);
 }
 
 /* FIXME: perform better error reporting, shall we? */
@@ -238,80 +242,88 @@ reg_destroy(Regexp *r)
 	free(r);
 }
 
+#if !defined(NDEBUG) && defined(UREG_TRACE)
 /* Dump the AST (preorder traversal) */
 void
 printre(Regexp *r)
 {
 	if (r == NULL)
 	{
-		printf("NoOp");
+		fprintf(stderr, "NoOp");
 		return;
 	}
 
 	switch (r->type)
 	{
 		default:
-			printf("Unknown(%d)", r->type);
+			fprintf(stderr, "Unknown(%d)", r->type);
 			break;
 			
 		case Alt:
-			printf("Alt(");
+			fprintf(stderr, "Alt(");
 			printre(r->left);
-			printf(", ");
+			fprintf(stderr, ", ");
 			printre(r->right);
-			printf(")");
+			fprintf(stderr, ")");
 			break;
 			
 		case Cat:
-			printf("Cat(");
+			fprintf(stderr, "Cat(");
 			printre(r->left);
-			printf(", ");
+			fprintf(stderr, ", ");
 			printre(r->right);
-			printf(")");
+			fprintf(stderr, ")");
 			break;
 			
 		case Lit:
-			printf("Lit(%c)", r->ch);
+			fprintf(stderr, "Lit(%c)", r->ch);
 			break;
 			
 		case Dot:
-			printf("Dot");
+			fprintf(stderr, "Dot");
 			break;
 			
 		case Range:
-			printf("Range(%c, %c)", r->lo, r->hi);
+			fprintf(stderr, "Range(%c, %c)", r->lo, r->hi);
 			break;
 			
 		case Star:
 			if (r->n)
-				printf("Ng");
-			printf("Star(");
+				fprintf(stderr, "Ng");
+			fprintf(stderr, "Star(");
 			printre(r->left);
-			printf(")");
+			fprintf(stderr, ")");
 			break;
 		
 		case Plus:
 			if (r->n)
-				printf("Ng");
-			printf("Plus(");
+				fprintf(stderr, "Ng");
+			fprintf(stderr, "Plus(");
 			printre(r->left);
-			printf(")");
+			fprintf(stderr, ")");
 			break;
 		
 		case Quest:
 			if (r->n)
-				printf("Ng");
-			printf("Quest(");
+				fprintf(stderr, "Ng");
+			fprintf(stderr, "Quest(");
 			printre(r->left);
-			printf(")");
+			fprintf(stderr, ")");
 			break;
 
 		case CountedRep:
 			if (r->n)
-				printf("Ng");
-			printf("CountedRep(");
+				fprintf(stderr, "Ng");
+			fprintf(stderr, "CountedRep(");
 			printre(r->left);
-			printf(", %d, %d)", r->lo, r->hi);
+			fprintf(stderr, ", %d, %d)", r->lo, r->hi);
+			break;
+
+		case Paren:
+			fprintf(stderr, "Paren(%d, ", r->n);
+			printre(r->left);
+			fprintf(stderr, ")");
 			break;
 	}
 }
+#endif /* !defined(NDEBUG) && defined(UREG_TRACE) */

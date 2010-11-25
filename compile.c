@@ -90,6 +90,9 @@ count(Regexp *r)
 				return (optcount * (1 + lcount)) + (r->lo * lcount);
 			}
 			break;
+		case Paren:
+			return 2 + count(r->left);
+			break;
 	}
 	/* Not reached */
 }
@@ -256,9 +259,20 @@ emit(Regexp *r, Inst **pc)
 				}
 			}
 			break;
+
+		case Paren:
+			(*pc)->opcode = Save;
+			(*pc)->n = 2*r->n;
+			(*pc)++;
+			emit(r->left, pc);
+			(*pc)->opcode = Save;
+			(*pc)->n = 2*r->n + 1;
+			(*pc)++;
+			break;
 	}
 }
 
+#if !defined(NDEBUG) && defined(UREG_TRACE)
 void
 printprog(Prog *p)
 {
@@ -292,6 +306,9 @@ printprog(Prog *p)
 			case Match:
 				printf("%2d. match\n", (int)(pc-p->start));
 				break;
+			case Save:
+				printf("%2d. save %d\n", (int)(pc-p->start), pc->n);
 		}
 	}
 }
+#endif /* !defined(NDEBUG) && defined(UREG_TRACE) */

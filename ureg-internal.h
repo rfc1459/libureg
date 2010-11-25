@@ -21,6 +21,7 @@ typedef struct Parse Parse;
 struct Parse
 {
 	int parseError;
+	int nparen;
 	Regexp *ast_root;
 };
 
@@ -53,13 +54,16 @@ enum
 	Quest,
 	Star,
 	Plus,
-	CountedRep
+	CountedRep,
+	Paren
 };
 
 extern Regexp *parse(const char *);
 extern Regexp *reg(int, Regexp *, Regexp *);
 extern void reg_destroy(Regexp *);
+#if !defined(NDEBUG) && defined(UREG_TRACE)
 extern void printre(Regexp *);
+#endif
 extern void fatal(char *, ...);
 extern void *mal(size_t);
 
@@ -73,6 +77,7 @@ struct Inst
 {
 	int opcode;
 	int c;
+	int n;
 	int lo, hi;
 	Inst *x;
 	Inst *y;
@@ -92,7 +97,9 @@ enum
 };
 
 extern Prog *compile(Regexp *);
+#if !defined(NDEBUG) && defined(UREG_TRACE)
 extern void printprog(Prog *);
+#endif
 
 extern int thompsonvm(Prog *, const char *);
 
