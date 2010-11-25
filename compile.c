@@ -60,36 +60,6 @@ count(Regexp *r)
 		case Plus:
 			return 1 + count(r->left);
 			break;
-		case CountedRep:
-			if (r->lo == r->hi)
-			{
-				/* Base case: exact count */
-				return r->lo * count(r->left);
-			}
-			else if (r->lo == -1)
-			{
-				/* Upper bound only
-				 * eg: n{,3} -> n?n?n?
-				 */
-				return r->hi * (1 + count(r->left));
-			}
-			else if (r->hi == -1)
-			{
-				/* Lower bound only
-				 * eg: n{3,} -> nnn+
-				 */
-				return 1 + r->lo * count(r->left);
-			}
-			else
-			{
-				/* Both bounds
-				 * eg n{3,7} -> nnnn?n?n?n?
-				 */
-				int optcount = r->hi - r->lo;
-				int lcount = count(r->left);
-				return (optcount * (1 + lcount)) + (r->lo * lcount);
-			}
-			break;
 		case Paren:
 			return 2 + count(r->left);
 			break;
@@ -192,71 +162,6 @@ emit(Regexp *r, Inst **pc)
 				t = p2->x;
 				p2->x = p2->y;
 				p2->y = t;
-			}
-			break;
-
-		case CountedRep:
-			if (r->lo == r->hi)
-				/* Emit r->left exactly r->lo times */
-				for (i = 0; i < r->lo; i++)
-					emit(r->left, pc);
-			else if (r->lo == -1)
-				/* Emit r->hi Quest sequences */
-				for (i = 0; i < r->hi; i++)
-				{
-					(*pc)->opcode = Split;
-					p1 = (*pc)++;
-					p1->x = *pc;
-					emit(r->left, pc);
-					p1->y = *pc;
-					if(r->n)
-					{
-						/* Non-greedy */
-						t = p1->x;
-						p1->x = p1->y;
-						p1->y = t;
-					}
-				}
-			else if (r->hi == -1)
-			{
-				/* Emit r->left r->lo - 1 times, then emit a Plus sequence */
-				for (i = 0; i < r->lo - 1; i++)
-					emit(r->left, pc);
-				p1 = *pc;
-				emit(r->left, pc);
-				(*pc)->opcode = Split;
-				(*pc)->x = p1;
-				p2 = *pc;
-				(*pc)++;
-				p2->y = *pc;
-				if(r->n)
-				{
-					t = p2->x;
-					p2->x = p2->y;
-					p2->y = t;
-				}
-			}
-			else
-			{
-				/* Tricky: emit r->left r->lo times, then emit a Quest sequence (r->hi - r->lo) times */
-				int optcount = r->hi - r->lo;
-				for (i = 0; i < r->lo; i++)
-					emit(r->left, pc);
-				for (i = 0; i < optcount; i++)
-				{
-					(*pc)->opcode = Split;
-					p1 = (*pc)++;
-					p1->x = *pc;
-					emit(r->left, pc);
-					p1->y = *pc;
-					if(r->n)
-					{
-						/* Non-greedy */
-						t = p1->x;
-						p1->x = p1->y;
-						p1->y = t;
-					}
-				}
 			}
 			break;
 

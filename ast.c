@@ -19,7 +19,7 @@ typedef enum lexer_state
 Regexp*
 parse(const char *s)
 {
-	Regexp *r, *dotstar;
+	Regexp *dotstar;
 	Parse pParse;
 	void *parser;
 	int value, token;
@@ -165,10 +165,10 @@ parse(const char *s)
 	if (!pParse.parseError)
 		uregParser(parser, 0, 0, &pParse);
 
-#ifndef NDEBUG	
+#if !defined(NDEBUG) && defined(UREG_TRACE)	
 	if (!pParse.parseError && pParse.ast_root == NULL)
 	{
-		fprintf(stderr, "WTF?\n");
+		fprintf(stderr, "parse -> Empty match\n");
 	}
 #endif
 
@@ -185,10 +185,12 @@ parse(const char *s)
 		return NULL;
 	}
 	/* Change AST root to "Cat(NgStar(Dot), Paren(ast_root))" */
-	r = reg(Paren, pParse.ast_root, NULL);
 	dotstar = reg(Star, reg(Dot, NULL, NULL), NULL);
 	dotstar->n = 1;
-	return reg(Cat, dotstar, r);
+	if (pParse.ast_root)
+		return reg(Cat, dotstar, reg(Paren, pParse.ast_root, NULL));
+	else
+		return dotstar;
 }
 
 /* FIXME: perform better error reporting, shall we? */
@@ -225,7 +227,10 @@ reg(int type, Regexp *left, Regexp *right)
 	r = (Regexp *)mal(sizeof(Regexp));
 	r->type = type;
 	r->left = left;
+	reg_incref(left);
 	r->right = right;
+	reg_incref(right);
+	r->refc = 0;
 	return r;
 }
 
@@ -235,11 +240,92 @@ reg_destroy(Regexp *r)
 {
 	if (r == NULL)
 		return;
-	if (r->left)
-		reg_destroy(r->left);
-	if (r->right)
-		reg_destroy(r->right);
+	if (r->refc > 0)
+		fatal("reg_destroy called with non-zero refc!");
+	reg_decref(r->left);
+	reg_decref(r->right);
 	free(r);
+}
+
+/* Expand and simplify counted repetitions */
+Regexp*
+simplify_repeat(Regexp *r, int min, int max, int ng)
+{
+	Regexp *nre;
+	int i;
+	if (r == NULL)
+		return NULL;
+	/* x{n,} -> at least n matches of x */
+	if (max == -1)
+	{
+		/* x{0,} -> x* */
+		if (min == 0)
+			return reg(Star, r, NULL);
+		/* x{1,} -> x+ */
+		else if (min == 1)
+			return reg(Plus, r, NULL);
+		/* x{4,} -> xxxx+ */
+		else
+		{
+			Regexp *plus = reg(Plus, r, NULL);
+			plus->n = ng;
+			nre = reg(Cat, r, r);
+			for (i = 2; i < min - 1; i++)
+				nre = reg(Cat, nre, r);
+			nre = reg(Cat, nre, plus);
+			return nre;
+		}
+	}
+	
+	/* Empty match? */
+	if (min == 0 && max == 0)
+	{
+		reg_decref(r);
+		return NULL;
+	}
+
+	/* x{1} is x */
+	if (min == 1 && max == 1)
+		return r;
+
+	/* x{n,m} -> n copies of x and m copies of x?
+	 * A naive implementation would be x?x?x? and so on,
+	 * but it would be better to nest the final m copies,
+	 * like x{2,5} = xx(x(xx?)?)?
+	 * Idea partially stolen from RE2 by Russ Cox
+	 */
+	
+	/* Leading prefix: xx */
+	nre = NULL;
+	if (min == 1)
+		nre = r;
+	else if (min > 1)
+	{
+		nre = reg(Cat, r, r);
+		for (i = 2; i < min; i++)
+			nre = reg(Cat, nre, r);
+	}
+	
+	/* Leading suffix: (x(xx?)?)? */
+	if (max > min)
+	{
+		Regexp *suf = reg(Quest, r, NULL);
+		suf->n = ng;
+		for (i = min + 1; i < max; i++)
+		{
+			suf = reg(Quest, reg(Cat, r, suf), NULL);
+			suf->n = ng;
+		}
+		if (nre == NULL)
+			nre = suf;
+		else
+			nre = reg(Cat, nre, suf);
+	}
+	
+	if (nre == NULL)
+		fatal("Malformed repeat!");
+	
+	return nre;
 }
 
 #if !defined(NDEBUG) && defined(UREG_TRACE)
@@ -309,14 +395,6 @@ printre(Regexp *r)
 			fprintf(stderr, "Quest(");
 			printre(r->left);
 			fprintf(stderr, ")");
-			break;
-
-		case CountedRep:
-			if (r->n)
-				fprintf(stderr, "Ng");
-			fprintf(stderr, "CountedRep(");
-			printre(r->left);
-			fprintf(stderr, ", %d, %d)", r->lo, r->hi);
 			break;
 
 		case Paren:

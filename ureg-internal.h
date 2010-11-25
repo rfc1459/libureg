@@ -39,6 +39,7 @@ struct Regexp
 	int n;
 	int ch;
 	int lo, hi;
+	int refc;
 	Regexp *left;
 	Regexp *right;
 };
@@ -54,13 +55,28 @@ enum
 	Quest,
 	Star,
 	Plus,
-	CountedRep,
 	Paren
 };
 
 extern Regexp *parse(const char *);
 extern Regexp *reg(int, Regexp *, Regexp *);
 extern void reg_destroy(Regexp *);
+#define reg_incref(r)				\
+	do {							\
+		if (r)						\
+			(r)->refc++;			\
+	} while (0)
+#define reg_decref(r)				\
+	do {							\
+		if (r)						\
+		{							\
+			(r)->refc--;			\
+				if ((r)->refc <= 0)	\
+				reg_destroy(r);		\
+		}							\
+	} while (0)
+
+extern Regexp *simplify_repeat(Regexp *, int, int, int);
 #if !defined(NDEBUG) && defined(UREG_TRACE)
 extern void printre(Regexp *);
 #endif

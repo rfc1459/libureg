@@ -69,12 +69,30 @@ regexp(A) ::= STAR(B) alt(C).   {
 
 /* Alternation */
 %destructor alt { trace_reg_destroy($$); }
-alt(A) ::= alt(B) ALT concat(C).    { A = reg(Alt, B, C); }
+alt(A) ::= alt(B) ALT concat(C). {
+    if (B == NULL && C == NULL)
+        A = NULL;
+    else if (B == NULL)
+        A = C;
+    else if (C == NULL)
+        A = B;
+    else
+        A = reg(Alt, B, C);
+}
 alt(A) ::= concat(B).               { A = B; }
 
 /* Concatenation */
 %destructor concat { trace_reg_destroy($$); }
-concat(A) ::= concat(B) repeat(C).  { A = reg(Cat, B, C); }
+concat(A) ::= concat(B) repeat(C). {
+    if (B == NULL && C == NULL)
+        A = NULL;
+    else if (B == NULL)
+        A = C;
+    else if (C == NULL)
+        A = B;
+    else
+        A = reg(Cat, B, C);
+}
 concat(A) ::= repeat(B).            { A = B; }
 
 /* Repetition */
@@ -103,23 +121,18 @@ repeat(A) ::= single(B) QUES QUES. {
 }
 /* Counted repetition */
 repeat(A) ::= single(B) LBRACE count(C) RBRACE. {
-    A = reg(CountedRep, B, NULL);
-    A->lo = C.low;
-    A->hi = C.high;
+    A = simplify_repeat(B, C.low, C.high, 0);
 }
 /* Counted repetition (non-greedy) */
 repeat(A) ::= single(B) LBRACE count(C) RBRACE QUES. {
-    A = reg(CountedRep, B, NULL);
-    A->lo = C.low;
-    A->hi = C.high;
-    A->n = 1;
+    A = simplify_repeat(B, C.low, C.high, 1);
 }
 
 /* Counted repetition statement */
 %type count {struct CountedRepVal}
 count(A) ::= INTEGER(B).                    { A.low =  B; A.high =  B; }
 count(A) ::= INTEGER(B) COMMA.              { A.low =  B; A.high = -1; }
-count(A) ::= COMMA INTEGER(B).              { A.low = -1; A.high =  B; }
+count(A) ::= COMMA INTEGER(B).              { A.low =  0; A.high =  B; }
 count(A) ::= INTEGER(B) COMMA INTEGER(C). {
     if (B > C)
         pParse->parseError = 1;

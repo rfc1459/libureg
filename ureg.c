@@ -39,16 +39,18 @@ ureg_compile(const char *pattern, unsigned int flags)
 		ureg_errno = UREG_ERR_SYNTAX;
 		return NULL;
 	}
+	/* Keep the root node of the AST referenced */
+	reg_incref(r);
 #if !defined(NDEBUG) && defined(UREG_TRACE)
-	printf("AST: ");
+	fprintf(stderr, "AST: ");
 	printre(r);
-	printf("\n");
+	fprintf(stderr, "\n");
 #endif
 	res = (struct ureg_regexp_t *)malloc(sizeof(struct ureg_regexp_t));
 	if(res == NULL)
 	{
 		ureg_errno = UREG_ERR_NOMEM;
-		reg_destroy(r);
+		reg_decref(r);
 		return NULL;
 	}
 
@@ -56,15 +58,15 @@ ureg_compile(const char *pattern, unsigned int flags)
 	if((res->p = compile(r)) == NULL)
 	{
 		ureg_errno = UREG_ERR_COMPILE;
-		reg_destroy(r);
+		reg_decref(r);
 		free(res);
 		return NULL;
 	}
 	
 	/* Success, throw away the AST, duplicate text form and return */
-	reg_destroy(r);
+	reg_decref(r);
 #if !defined(NDEBUG) && defined(UREG_TRACE)
-	printf("Program:\n");
+	fprintf(stderr, "Program:\n");
 	printprog(res->p);
 #endif
 	res->txt = strdup(pattern); /* FIXME: check for OOM */
