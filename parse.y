@@ -155,9 +155,14 @@ single(A) ::= DOT. {
 single(A) ::= LBRACKET bracketexp(B) RBRACKET.  { A = B; }
 /* Capturing group */
 single(A) ::= LPAREN alt(B) RPAREN. {
-    pParse->nparen++;
-    A = reg(Paren, B, NULL);
-    A->n = pParse->nparen;
+    if (B != NULL)
+    {
+        pParse->nparen++;
+        A = reg(Paren, B, NULL);
+        A->n = pParse->nparen;
+    }
+    else
+        A = NULL;
 }
 /* Non-capturing group */
 single(A) ::= LPAREN QUES COLON alt(B) RPAREN.  { A = B; }
