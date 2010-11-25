@@ -1,423 +1,163 @@
-%{
-/* Copyright 2010 Matteo Panella. All Rights Reserved.
+/* Lemon-based parser for ureg.
+ * Copyright 2010 Matteo Panella. All Rights Reserved.
  * Based on code by Russ Cox.
- * Use of this code is governed by a BSD-style license
+ * Use of this code is governed by a BSD-style license.
  */
 
+/* Prefix for token #defines (eg. TK_LITERAL, TK_STAR) */
+%token_prefix TK_
+
+/* Data type attached to terminals */
+%token_type {int}
+/* Data type attached to non-terminals */
+%default_type {Regexp*}
+
+/* Parser state */
+%extra_argument {Parse *pParse}
+
+/* Syntax error handler */
+%syntax_error {
+    UNUSED_PARAMETER(yymajor);
+    UNUSED_PARAMETER(yyminor);
+    pParse->parseError = 1;
+}
+%stack_overflow {
+    UNUSED_PARAMETER(yypMinor);
+    pParse->parseError = 1;
+}
+
+/* Prefix to generated functions */
+%name uregParser
+
+/* Code included near the beginning of the generated parser */
+%include {
 #include "stdinc.h"
 #define UREG_INTERNAL
 #include "ureg-internal.h"
 
-static int yylex(void);
-static void yyerror(char*);
-static Regexp *parsed_regexp;
+/* Disable error recovery */
+#define YYNOERRORRECOVERY 1
 
-typedef enum lexer_state
-{
-	NORMAL,
-	BRACKET1,
-	BRACKET
-} lexer_state_t;
+/* Counted repetition values */
+struct CountedRepVal {
+    int low;
+    int high;
+};
 
-static lexer_state_t lstate;
-
-%}
-
-%union {
-	int     val;
-	Regexp* re;
 }
 
-%type	<re>	line
-%type	<re>	alt concat repeat single
-%type	<re>	bracket class range
-%token	<val>	LCHAR LDASH LLPAREN LRPAREN LALT LSTAR LPLUS LQUES LDOT
-%token		CLPAREN CRPAREN LBAD EOL RSEP
-%%
-
-/* Parse a regexp and build the corresponding AST */
-
-line: alt EOL
-	{
-		parsed_regexp = $1;
-		return 1;
-	}
-|	LSTAR alt EOL
-	{
-		Regexp *r1 = reg(Lit, NULL, NULL);
-		r1->ch = $1;
-		parsed_regexp = reg(Cat, r1, $2);
-		return 1;
-	}
-;
-
-alt:
-	concat
-|	alt LALT concat
-	{
-		$$ = reg(Alt, $1, $3);
-	}
-;
-
-concat:
-	repeat
-|	concat repeat
-	{
-		$$ = reg(Cat, $1, $2);
-	}
-;
-
-repeat:
-	single
-|	single LSTAR
-	{
-		$$ = reg(Star, $1, NULL);
-	}
-|	single LSTAR LQUES
-	{
-		$$ = reg(Star, $1, NULL);
-		$$->n = 1;
-	}
-|	single LPLUS
-	{
-		$$ = reg(Plus, $1, NULL);
-	}
-|	single LPLUS LQUES
-	{
-		$$ = reg(Plus, $1, NULL);
-		$$->n = 1;
-	}
-|	single LQUES
-	{
-		$$ = reg(Quest, $1, NULL);
-	}
-|	single LQUES LQUES
-	{
-		$$ = reg(Quest, $1, NULL);
-		$$->n = 1;
-	}
-;
-
-single:
-	LCHAR
-	{
-		$$ = reg(Lit, NULL, NULL);
-		$$->ch = $1;
-	}
-|	LDASH
-	{
-		$$ = reg(Lit, NULL, NULL);
-		$$->ch = $1;
-	}
-|	LDOT
-	{
-		$$ = reg(Dot, NULL, NULL);
-	}
-|	CLPAREN bracket CRPAREN
-	{
-		$$ = $2;
-		/* FIXME: coalesce overlapping ranges and remove duplicates */
-	}
-|	LLPAREN alt LRPAREN
-	{
-		$$ = $2;
-	}
-;
-
-/* Class grammar is oversimplified, this should REALLY be fixed */
-bracket:
-	class
-|	LDASH
-	{
-		$$ = reg(Lit, NULL, NULL);
-		$$->ch = $1;
-	}
-|	LDASH class
-	{
-		Regexp *r1 = reg(Lit, NULL, NULL);
-		r1->ch = $1;
-		$$ = reg(Alt, r1, $2);
-	}
-;
-
-class:
-	range
-|	class range
-	{
-		$$ = reg(Alt, $1, $2);
-	}
-;
-
-/* We use a special Range node in order to reduce the number
- * of branches in our NFA.
- * This saves some memory and execution speed (though the latter
- * is mostly influenced by input length).
- */
-range:
-	LCHAR
-	{
-		$$ = reg(Lit, NULL, NULL);
-		$$->ch = $1;
-	}
-|	LCHAR RSEP LCHAR
-	{
-		/* Slight optimization: convert to Lit node if boundaries are equal */
-		if ($1 == $3)
-		{
-			$$ = reg(Lit, NULL, NULL);
-			$$->ch = $1;
-		}
-		else
-		{
-			$$ = reg(Range, NULL, NULL);
-			if($1 > $3)
-			{
-				/* Flip boundaries */
-				$$->lo = $3;
-				$$->hi = $1;
-			}
-			else
-			{
-				$$->lo = $1;
-				$$->hi = $3;
-			}
-		}
-	}
-;
-%%
-
-static const char *input;
-static Regexp *parsed_regexp;
-static lexer_state_t lstate;
-
-static int
-yylex(void)
-{
-	int c, s;
-	
-	if(input == NULL || *input == '\0')
-		return EOL;
-	c = *input++;
-	yylval.val = c;
-	switch(lstate)
-	{
-	case NORMAL:
-		switch(c)
-		{
-			default:
-				s = LCHAR;
-				break;
-			case '\\':
-				if(*input == '\0')
-					return LBAD;
-				c = *input++;
-				yylval.val = c;
-				s = LCHAR;
-				break;
-			case '[':
-				s = CLPAREN;
-				lstate = BRACKET1;
-				break;
-			case ']':
-				s = CRPAREN;
-				break;
-			case '(':
-				s = LLPAREN;
-				break;
-			case ')':
-				s = LRPAREN;
-				break;
-			case '|':
-				s = LALT;
-				break;
-			case '*':
-				s = LSTAR;
-				break;
-			case '+':
-				s = LPLUS;
-				break;
-			case '?':
-				s = LQUES;
-				break;
-			case '.':
-				s = LDOT;
-				break;
-			case '-':
-				s = LDASH;
-				break;
-		}
-		break;
-	case BRACKET1:
-		switch(c)
-		{
-			case ']':
-			case '-':
-			default:
-				s = LCHAR;
-				break;
-			
-		}
-		lstate = BRACKET;
-		break;
-	case BRACKET:
-		switch(c)
-		{
-			default:
-				s = LCHAR;
-				break;
-			case ']':
-				s = CRPAREN;
-				lstate = NORMAL;
-				break;
-			case '-':
-				/* Peek next character */
-				if(*input == ']')
-					s = LCHAR;
-				else
-					s = RSEP;
-				break;
-		}
-		break;
-	}
-	return s;
+/* Here comes the grammar */
+input ::= regexp(A).                { pParse->ast_root = A; }
+%destructor regexp { reg_destroy($$); }
+regexp(A) ::= alt(B).               { A = B; }
+regexp(A) ::= STAR(B) alt(C).   {
+    Regexp *r1 = reg(Lit, NULL, NULL);
+    r1->ch = B;
+    A = reg(Cat, r1, C);
 }
 
-/* FIXME: perform better error reporting, shall we? */
-void
-fatal(char *fmt, ...)
-{
-	va_list arg;
-	
-	va_start(arg, fmt);
-	fprintf(stderr, "fatal error: ");
-	vfprintf(stderr, fmt, arg);
-	fprintf(stderr, "\n");
-	va_end(arg);
-	exit(2);
+/* Alternation */
+%destructor alt { reg_destroy($$); }
+alt(A) ::= alt(B) ALT concat(C).    { A = reg(Alt, B, C); }
+alt(A) ::= concat(B).               { A = B; }
+
+/* Concatenation */
+%destructor concat { reg_destroy($$); }
+concat(A) ::= concat(B) repeat(C).  { A = reg(Cat, B, C); }
+concat(A) ::= repeat(B).            { A = B; }
+
+/* Repetition */
+%destructor repeat { reg_destroy($$); }
+repeat(A) ::= single(B).            { A = B; }
+/* Zero or more */
+repeat(A) ::= single(B) STAR.       { A = reg(Star, B, NULL); }
+/* Zero or more (non-greedy) */
+repeat(A) ::= single(B) STAR QUES. {
+    A = reg(Star, B, NULL);
+    A->n = 1;
+}
+/* One or more */
+repeat(A) ::= single(B) PLUS.       { A = reg(Plus, B, NULL); }
+/* One or more (non-greedy) */
+repeat(A) ::= single(B) PLUS QUES. {
+    A = reg(Plus, B, NULL);
+    A->n = 1;
+}
+/* At most one */
+repeat(A) ::= single(B) QUES.       { A = reg(Quest, B, NULL); }
+/* At most one (non-greedy - yes, there is a ?? operator...) */
+repeat(A) ::= single(B) QUES QUES. {
+    A = reg(Quest, B, NULL);
+    A->n = 1;
+}
+/* Counted repetition */
+repeat(A) ::= single(B) LBRACE count(C) RBRACE. {
+    A = reg(CountedRep, B, NULL);
+    A->lo = C.low;
+    A->hi = C.high;
+}
+/* Counted repetition (non-greedy) */
+repeat(A) ::= single(B) LBRACE count(C) RBRACE QUES. {
+    A = reg(CountedRep, B, NULL);
+    A->lo = C.low;
+    A->hi = C.high;
+    A->n = 1;
 }
 
-static void
-yyerror(char *s)
-{
-	fatal("%s", s);
-}
+/* Counted repetition statement */
+%type count {struct CountedRepVal}
+count(A) ::= INTEGER(B).                    { A.low =  B; A.high =  B; }
+count(A) ::= INTEGER(B) COMMA.              { A.low =  B; A.high = -1; }
+count(A) ::= COMMA INTEGER(B).              { A.low = -1; A.high =  B; }
+count(A) ::= INTEGER(B) COMMA INTEGER(C).   { A.low =  B; A.high =  C; }
 
-Regexp*
-parse(const char *s)
-{
-	Regexp *dotstar;
-	
-	input = s;
-	parsed_regexp = NULL;
-	lstate = NORMAL;
-	if(yyparse() != 1)
-		yyerror("Syntax error");
-	if(parsed_regexp == NULL)
-		yyerror("NULL result (wtf?)");
-	
-	/* Change AST root to "Cat(NgStar(Dot), parsed_regexp)" */
-	dotstar = reg(Star, reg(Dot, NULL, NULL), NULL);
-	dotstar->n = 1;
-	return reg(Cat, dotstar, parsed_regexp);
+/* Single character match */
+%destructor single { reg_destroy($$); }
+single(A) ::= LITERAL(B). {
+    A = reg(Lit, NULL, NULL);
+    A->ch = B;
 }
-
-void*
-mal(size_t n)
-{
-	void *v;
-	v = malloc(n);
-	if(v == NULL)
-		fatal("out of memory");
-	memset(v, '\0', n);
-	return v;
+single(A) ::= DOT. {
+    A = reg(Dot, NULL, NULL);
 }
+single(A) ::= LBRACKET bracketexp(B) RBRACKET.  { A = B; }
+single(A) ::= LPAREN alt(B) RPAREN.             { A = B; }
 
-/* Build an AST node */
-Regexp*
-reg(int type, Regexp *left, Regexp *right)
-{
-	Regexp *r;
-	
-	r = (Regexp *) mal(sizeof(Regexp));
-	r->type = type;
-	r->left = left;
-	r->right = right;
-	return r;
+/* Oversimplified bracket expression grammar */
+%destructor bracketexp { reg_destroy($$); }
+bracketexp(A) ::= class(B).         { A = B; }
+
+/* Character class */
+%destructor class { reg_destroy($$); }
+class(A) ::= class(B) range(C).     { A = reg(Alt, B, C); }
+class(A) ::= range(B).              { A = B; }
+
+/* Range expression */
+%destructor range { reg_destroy($$); }
+range(A) ::= LITERAL(B). {
+    A = reg(Lit, NULL, NULL);
+    A->ch = B;
 }
-
-/* Destroy an AST (postorder traversal) */
-void
-reg_destroy(Regexp *r)
-{
-	if(r == NULL)
-		return;
-	if(r->left)
-		reg_destroy(r->left);
-	if(r->right)
-		reg_destroy(r->right);
-	free(r);
-}
-
-/* Dump the AST (preorder traversal) */
-void
-printre(Regexp *r)
-{
-	switch(r->type)
-	{
-		default:
-			printf("PUPPA!");
-			break;
-			
-		case Alt:
-			printf("Alt(");
-			printre(r->left);
-			printf(", ");
-			printre(r->right);
-			printf(")");
-			break;
-			
-		case Cat:
-			printf("Cat(");
-			printre(r->left);
-			printf(", ");
-			printre(r->right);
-			printf(")");
-			break;
-			
-		case Lit:
-			printf("Lit(%c)", r->ch);
-			break;
-			
-		case Dot:
-			printf("Dot");
-			break;
-			
-		case Range:
-			printf("Range(%c, %c)", r->lo, r->hi);
-			break;
-			
-		case Star:
-			if(r->n)
-				printf("Ng");
-			printf("Star(");
-			printre(r->left);
-			printf(")");
-			break;
-		
-		case Plus:
-			if(r->n)
-				printf("Ng");
-			printf("Plus(");
-			printre(r->left);
-			printf(")");
-			break;
-		
-		case Quest:
-			if(r->n)
-				printf("Ng");
-			printf("Quest(");
-			printre(r->left);
-			printf(")");
-			break;
-	}
+range(A) ::= LITERAL(B) RSEP LITERAL(C). {
+    /* Both ends of range expression are equal, transform them into a literal */
+    if (B == C)
+    {
+        A = reg(Lit, NULL, NULL);
+        A->ch = B;
+    }
+    else
+    {
+        A = reg(Range, NULL, NULL);
+        if (B > C)
+        {
+            /* Flip boundaries */
+            A->lo = C;
+            A->hi = B;
+        }
+        else
+        {
+            A->lo = B;
+            A->hi = C;
+        }
+    }
 }

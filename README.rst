@@ -9,10 +9,9 @@ considered to be pathological cases for backtracking-based matching engines.
 
 Requirements
 ************
-libuReg requires a C89-compliant C compiler (gcc is fine), GNU Bison, and
-CMake.
+libuReg requires a C89-compliant C compiler (gcc is fine) and CMake.
 
-The library has been tested on MacOSX 10.6, FreeBSD 8.0 and Debian 5.0, but it
+The library has been tested on MacOSX 10.6, FreeBSD 8.1 and Debian squeeze, but it
 should work on any modern POSIX-compliant operating system. Maybe it could work
 under MinGW or Cygwin, but you're pretty much on your own (sorry, I don't own a
 Win32 system).
@@ -45,7 +44,7 @@ libuReg has mostly the same syntax of POSIX EREs, with a few caveats:
  * bracket expressions do not yet support negative matching;
  * no assertions and anchors (I didn't need them), all patterns are strictly
    unanchored;
- * no counted repetitions (yet);
+ * no counted repetitions (accepted by parser, but they will cause a ``bad emit`` error);
  * non-greedy operators are supported, although they are mostly useless.
 
 Please keep in mind this is experimental code.

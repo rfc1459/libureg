@@ -10,9 +10,26 @@
 #error "ureg-internal.h should not be used directly, use ureg.h instead"
 #endif /* UREG_INTERNAL */
 
+#define UNUSED_PARAMETER(x) (void)(x)
+
 typedef struct Regexp Regexp;
 typedef struct Prog Prog;
 typedef struct Inst Inst;
+typedef struct Parse Parse;
+
+/* Parser status */
+struct Parse
+{
+	int parseError;
+	Regexp *ast_root;
+};
+
+extern void *uregParserAlloc(void *(*mallocProc)(size_t));
+extern void uregParserFree(void *p, void (*freeProc)(void*));
+extern void uregParser(void *, int, int, Parse *);
+#ifndef NDEBUG
+extern void uregParserTrace(FILE *, char *);
+#endif
 
 /* An AST node */
 struct Regexp
@@ -35,7 +52,8 @@ enum
 	Range,
 	Quest,
 	Star,
-	Plus
+	Plus,
+	CountedRep
 };
 
 extern Regexp *parse(const char *);

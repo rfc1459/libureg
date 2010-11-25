@@ -12,10 +12,9 @@ SET(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
 #### External CMake modules ####
 INCLUDE(TestMacros)
+INCLUDE(LemonMacros)
 INCLUDE(CheckIncludeFile)
 
-#### CMake packages ####
-FIND_PACKAGE(BISON)
 
 #### Platform tests ####
 CHECK_INCLUDE_FILE(stdlib.h HAVE_STDLIB_H)
@@ -30,11 +29,17 @@ ENABLE_TESTING()
 #### Include paths et. al. ####
 INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR} ${PROJECT_SOURCE_DIR})
 
+#### Lemon bootstrap ####
+ADD_EXECUTABLE(lemon lemon/lemon.c)
+
+#### lemon parser ####
+LEMON_PARSER(parse.y)
+
 #### libureg target ####
-BISON_TARGET(uregParser parse.y ${PROJECT_BINARY_DIR}/parse.c)
 SET(ureg_LIB_SRCS
+ast.c
 compile.c
-${BISON_uregParser_OUTPUTS}
+parse.c
 thompsonvm.c
 ureg.c
 )
