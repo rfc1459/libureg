@@ -76,9 +76,9 @@ count(Regexp *r)
 			else if (r->hi == -1)
 			{
 				/* Lower bound only
-				 * eg: n{3,} -> nnnn*
+				 * eg: n{3,} -> nnn+
 				 */
-				return (2 + (r->lo + 1) * count(r->left));
+				return 1 + r->lo * count(r->left);
 			}
 			else
 			{
@@ -216,22 +216,21 @@ emit(Regexp *r, Inst **pc)
 				}
 			else if (r->hi == -1)
 			{
-				/* Emit r->left r->lo times, then emit a Star sequence */
-				for (i = 0; i < r->lo; i++)
+				/* Emit r->left r->lo - 1 times, then emit a Plus sequence */
+				for (i = 0; i < r->lo - 1; i++)
 					emit(r->left, pc);
-				(*pc)->opcode = Split;
-				p1 = (*pc)++;
-				p1->x = *pc;
+				p1 = *pc;
 				emit(r->left, pc);
-				(*pc)->opcode = Jmp;
+				(*pc)->opcode = Split;
 				(*pc)->x = p1;
+				p2 = *pc;
 				(*pc)++;
-				p1->y = *pc;
+				p2->y = *pc;
 				if(r->n)
 				{
-					t = p1->x;
-					p1->x = p1->y;
-					p1->y = t;
+					t = p2->x;
+					p2->x = p2->y;
+					p2->y = t;
 				}
 			}
 			else
