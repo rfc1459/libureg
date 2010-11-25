@@ -120,7 +120,15 @@ repeat(A) ::= single(B) LBRACE count(C) RBRACE QUES. {
 count(A) ::= INTEGER(B).                    { A.low =  B; A.high =  B; }
 count(A) ::= INTEGER(B) COMMA.              { A.low =  B; A.high = -1; }
 count(A) ::= COMMA INTEGER(B).              { A.low = -1; A.high =  B; }
-count(A) ::= INTEGER(B) COMMA INTEGER(C).   { A.low =  B; A.high =  C; }
+count(A) ::= INTEGER(B) COMMA INTEGER(C). {
+    if (B > C)
+        pParse->parseError = 1;
+    else
+    {
+        A.low = B;
+        A.high = C;
+    }
+}
 
 /* Single character match */
 %destructor single { trace_reg_destroy($$); }
@@ -159,16 +167,15 @@ range(A) ::= LITERAL(B) RSEP LITERAL(C). {
     else
     {
         A = reg(Range, NULL, NULL);
-        if (B > C)
-        {
-            /* Flip boundaries */
-            A->lo = C;
-            A->hi = B;
-        }
-        else
+        if (B < C)
         {
             A->lo = B;
             A->hi = C;
+        }
+        else
+        {
+            /* Invalid range */
+            pParse->parseError = 1;
         }
     }
 }

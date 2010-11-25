@@ -32,6 +32,9 @@ compile(Regexp *r)
 static int
 count(Regexp *r)
 {
+	if (r == NULL)
+		return 0;
+
 	switch(r->type)
 	{
 		default:
@@ -96,6 +99,9 @@ emit(Regexp *r, Inst **pc)
 {
 	Inst *p1, *p2, *t;
 	int i;
+	
+	if (r == NULL)
+		return;
 	
 	switch(r->type)
 	{

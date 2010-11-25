@@ -238,6 +238,12 @@ reg_destroy(Regexp *r)
 void
 printre(Regexp *r)
 {
+	if (r == NULL)
+	{
+		printf("NoOp");
+		return;
+	}
+
 	switch (r->type)
 	{
 		default:
