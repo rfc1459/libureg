@@ -44,14 +44,13 @@ libuReg has mostly the same syntax of POSIX EREs, with a few caveats:
  * bracket expressions do not yet support negative matching;
  * no assertions and anchors (I didn't need them), all patterns are strictly
    unanchored;
- * no counted repetitions (accepted by parser, but they will cause a ``bad emit`` error);
  * non-greedy operators are supported, although they are mostly useless.
 
 Please keep in mind this is experimental code.
 
 Known bugs
 **********
-When a syntax error is encountered, the parser will call ``exit()`` instead of
+When the compiler hits an unknown AST node, it will call ``exit()`` instead of
 relying on a user-defined error callback.
 
 Development

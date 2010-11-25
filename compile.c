@@ -57,6 +57,36 @@ count(Regexp *r)
 		case Plus:
 			return 1 + count(r->left);
 			break;
+		case CountedRep:
+			if (r->lo == r->hi)
+			{
+				/* Base case: exact count */
+				return r->lo * count(r->left);
+			}
+			else if (r->lo == -1)
+			{
+				/* Upper bound only
+				 * eg: n{,3} -> n?n?n?
+				 */
+				return r->hi * (1 + count(r->left));
+			}
+			else if (r->hi == -1)
+			{
+				/* Lower bound only
+				 * eg: n{3,} -> nnnn*
+				 */
+				return (2 + (r->lo + 1) * count(r->left));
+			}
+			else
+			{
+				/* Both bounds
+				 * eg n{3,7} -> nnnn?n?n?n?
+				 */
+				int optcount = r->hi - r->lo;
+				int lcount = count(r->left);
+				return (optcount * (1 + lcount)) + (r->lo * lcount);
+			}
+			break;
 	}
 	/* Not reached */
 }
@@ -65,6 +95,7 @@ static void
 emit(Regexp *r, Inst **pc)
 {
 	Inst *p1, *p2, *t;
+	int i;
 	
 	switch(r->type)
 	{
@@ -152,6 +183,72 @@ emit(Regexp *r, Inst **pc)
 				t = p2->x;
 				p2->x = p2->y;
 				p2->y = t;
+			}
+			break;
+
+		case CountedRep:
+			if (r->lo == r->hi)
+				/* Emit r->left exactly r->lo times */
+				for (i = 0; i < r->lo; i++)
+					emit(r->left, pc);
+			else if (r->lo == -1)
+				/* Emit r->hi Quest sequences */
+				for (i = 0; i < r->hi; i++)
+				{
+					(*pc)->opcode = Split;
+					p1 = (*pc)++;
+					p1->x = *pc;
+					emit(r->left, pc);
+					p1->y = *pc;
+					if(r->n)
+					{
+						/* Non-greedy */
+						t = p1->x;
+						p1->x = p1->y;
+						p1->y = t;
+					}
+				}
+			else if (r->hi == -1)
+			{
+				/* Emit r->left r->lo times, then emit a Star sequence */
+				for (i = 0; i < r->lo; i++)
+					emit(r->left, pc);
+				(*pc)->opcode = Split;
+				p1 = (*pc)++;
+				p1->x = *pc;
+				emit(r->left, pc);
+				(*pc)->opcode = Jmp;
+				(*pc)->x = p1;
+				(*pc)++;
+				p1->y = *pc;
+				if(r->n)
+				{
+					t = p1->x;
+					p1->x = p1->y;
+					p1->y = t;
+				}
+			}
+			else
+			{
+				/* Tricky: emit r->left r->lo times, then emit a Quest sequence (r->hi - r->lo) times */
+				int optcount = r->hi - r->lo;
+				for (i = 0; i < r->lo; i++)
+					emit(r->left, pc);
+				for (i = 0; i < optcount; i++)
+				{
+					(*pc)->opcode = Split;
+					p1 = (*pc)++;
+					p1->x = *pc;
+					emit(r->left, pc);
+					p1->y = *pc;
+					if(r->n)
+					{
+						/* Non-greedy */
+						t = p1->x;
+						p1->x = p1->y;
+						p1->y = t;
+					}
+				}
 			}
 			break;
 	}
