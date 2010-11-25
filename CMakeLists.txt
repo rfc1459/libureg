@@ -1,7 +1,7 @@
 ############################################################
 # libureg CMake specifications                             #
 ############################################################
-# Copyright 2010 Matteo Panella. All rights reserved.      #
+# Copyright 2010 Matteo Panella.                           #
 # Distributed under a BSD-style license (see LICENSE file) #
 ############################################################
 
