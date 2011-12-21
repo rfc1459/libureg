@@ -1,7 +1,5 @@
-syntax: glob
-
-build
-docs
+build/
+docs/
 *.o
 *.tab.c
 *.dSYM
