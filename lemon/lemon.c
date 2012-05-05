@@ -15,7 +15,7 @@
 
 #ifndef __WIN32__
 #   if defined(_WIN32) || defined(WIN32)
-#	define __WIN32__
+#       define __WIN32__
 #   endif
 #endif
 
@@ -573,7 +573,7 @@ int acttab_insert(acttab *p){
 */
 
 /* Find a precedence symbol of every rule in the grammar.
-** 
+**
 ** Those rules which have a precedence symbol coded in the input
 ** grammar using the "[symbol]" construct will already have the
 ** rp->precsym field filled.  Other rules take as their precedence
@@ -599,7 +599,7 @@ struct lemon *xp;
           }
         }else if( sp->prec>=0 ){
           rp->precsym = rp->rhs[i];
-	}
+        }
       }
     }
   }
@@ -657,12 +657,12 @@ struct lemon *lemp;
             progress += SetAdd(s1->firstset,s2->subsym[j]->index);
           }
           break;
-	}else if( s1==s2 ){
+        }else if( s1==s2 ){
           if( s1->lambda==LEMON_FALSE ) break;
-	}else{
+        }else{
           progress += SetUnion(s1->firstset,s2->firstset);
           if( s2->lambda==LEMON_FALSE ) break;
-	}
+        }
       }
     }
   }while( progress );
@@ -902,7 +902,7 @@ struct lemon *lemp;
       cfp->status = INCOMPLETE;
     }
   }
-  
+
   do{
     progress = 0;
     for(i=0; i<lemp->nstate; i++){
@@ -913,8 +913,8 @@ struct lemon *lemp;
           if( change ){
             plp->cfp->status = INCOMPLETE;
             progress = 1;
-	  }
-	}
+          }
+        }
         cfp->status = COMPLETE;
       }
     }
@@ -934,7 +934,7 @@ struct lemon *lemp;
   struct symbol *sp;
   struct rule *rp;
 
-  /* Add all of the reduce actions 
+  /* Add all of the reduce actions
   ** A reduce action is added for each element of the followset of
   ** a configuration which has its dot at the extreme right.
   */
@@ -948,7 +948,7 @@ struct lemon *lemp;
             ** rule "cfp->rp" if the lookahead symbol is "lemp->symbols[j]" */
             Action_add(&stp->ap,REDUCE,lemp->symbols[j],(char *)cfp->rp);
           }
-	}
+        }
       }
     }
   }
@@ -1054,7 +1054,7 @@ struct symbol *errsym;   /* The error symbol (if defined.  NULL otherwise) */
       apx->type = RD_RESOLVED;
     }
   }else{
-    assert( 
+    assert(
       apx->type==SH_RESOLVED ||
       apx->type==RD_RESOLVED ||
       apx->type==SSCONFLICT ||
@@ -1222,11 +1222,11 @@ struct lemon *lemp;
               SetAdd(newcfp->fws, xsp->subsym[k]->index);
             }
             break;
-	  }else{
+          }else{
             SetUnion(newcfp->fws,xsp->firstset);
             if( xsp->lambda==LEMON_FALSE ) break;
-	  }
-	}
+          }
+        }
         if( i==rp->nrhs ) Plink_add(&cfp->fplp,newcfp);
       }
     }
@@ -1426,7 +1426,7 @@ char **argv;
   OptInit(argv,options,stderr);
   if( version ){
      printf("Lemon version 1.0\n");
-     exit(0); 
+     exit(0);
   }
   if( OptNArgs() < 1 ){
     fprintf(stderr,"Exactly one filename argument is required.\n");
@@ -2016,7 +2016,7 @@ struct pstate *psp;
 "There is no prior rule opon which to attach the code \
 fragment which begins on this line.");
           psp->errorcnt++;
-	}else if( psp->prevrule->code!=0 ){
+        }else if( psp->prevrule->code!=0 ){
           ErrorMsg(psp->filename,psp->tokenlineno,
 "Code fragment beginning on this line is not the first \
 to follow the previous rule.");
@@ -2024,7 +2024,7 @@ to follow the previous rule.");
         }else{
           psp->prevrule->line = psp->tokenlineno;
           psp->prevrule->code = &x[1];
-	}
+        }
       }else if( x[0]=='[' ){
         psp->state = PRECEDENCE_MARK_1;
       }else{
@@ -2110,14 +2110,14 @@ to follow the previous rule.");
     case IN_RHS:
       if( x[0]=='.' ){
         struct rule *rp;
-        rp = (struct rule *)calloc( sizeof(struct rule) + 
+        rp = (struct rule *)calloc( sizeof(struct rule) +
              sizeof(struct symbol*)*psp->nrhs + sizeof(char*)*psp->nrhs, 1);
         if( rp==0 ){
           ErrorMsg(psp->filename,psp->tokenlineno,
             "Can't allocate enough memory for this rule.");
           psp->errorcnt++;
           psp->prevrule = 0;
-	}else{
+        }else{
           int i;
           rp->ruleline = psp->tokenlineno;
           rp->rhs = (struct symbol**)&rp[1];
@@ -2125,7 +2125,7 @@ to follow the previous rule.");
           for(i=0; i<psp->nrhs; i++){
             rp->rhs[i] = psp->rhs[i];
             rp->rhsalias[i] = psp->alias[i];
-	  }
+          }
           rp->lhs = psp->lhs;
           rp->lhsalias = psp->lhsalias;
           rp->nrhs = psp->nrhs;
@@ -2137,12 +2137,12 @@ to follow the previous rule.");
           rp->next = 0;
           if( psp->firstrule==0 ){
             psp->firstrule = psp->lastrule = rp;
-	  }else{
+          }else{
             psp->lastrule->next = rp;
             psp->lastrule = rp;
-	  }
+          }
           psp->prevrule = rp;
-	}
+        }
         psp->state = WAITING_FOR_DECL_OR_RULE;
       }else if( isalpha(x[0]) ){
         if( psp->nrhs>=MAXRHS ){
@@ -2151,11 +2151,11 @@ to follow the previous rule.");
             x);
           psp->errorcnt++;
           psp->state = RESYNC_AFTER_RULE_ERROR;
-	}else{
+        }else{
           psp->rhs[psp->nrhs] = Symbol_new(x);
           psp->alias[psp->nrhs] = 0;
           psp->nrhs++;
-	}
+        }
       }else if( (x[0]=='|' || x[0]=='/') && psp->nrhs>0 ){
         struct symbol *msp = psp->rhs[psp->nrhs-1];
         if( msp->type!=MULTITERMINAL ){
@@ -2218,24 +2218,24 @@ to follow the previous rule.");
         if( strcmp(x,"name")==0 ){
           psp->declargslot = &(psp->gp->name);
           psp->insertLineMacro = 0;
-	}else if( strcmp(x,"include")==0 ){
+        }else if( strcmp(x,"include")==0 ){
           psp->declargslot = &(psp->gp->include);
-	}else if( strcmp(x,"code")==0 ){
+        }else if( strcmp(x,"code")==0 ){
           psp->declargslot = &(psp->gp->extracode);
-	}else if( strcmp(x,"token_destructor")==0 ){
+        }else if( strcmp(x,"token_destructor")==0 ){
           psp->declargslot = &psp->gp->tokendest;
-	}else if( strcmp(x,"default_destructor")==0 ){
+        }else if( strcmp(x,"default_destructor")==0 ){
           psp->declargslot = &psp->gp->vardest;
-	}else if( strcmp(x,"token_prefix")==0 ){
+        }else if( strcmp(x,"token_prefix")==0 ){
           psp->declargslot = &psp->gp->tokenprefix;
           psp->insertLineMacro = 0;
-	}else if( strcmp(x,"syntax_error")==0 ){
+        }else if( strcmp(x,"syntax_error")==0 ){
           psp->declargslot = &(psp->gp->error);
-	}else if( strcmp(x,"parse_accept")==0 ){
+        }else if( strcmp(x,"parse_accept")==0 ){
           psp->declargslot = &(psp->gp->accept);
-	}else if( strcmp(x,"parse_failure")==0 ){
+        }else if( strcmp(x,"parse_failure")==0 ){
           psp->declargslot = &(psp->gp->failure);
-	}else if( strcmp(x,"stack_overflow")==0 ){
+        }else if( strcmp(x,"stack_overflow")==0 ){
           psp->declargslot = &(psp->gp->overflow);
         }else if( strcmp(x,"extra_argument")==0 ){
           psp->declargslot = &(psp->gp->arg);
@@ -2264,9 +2264,9 @@ to follow the previous rule.");
           psp->preccounter++;
           psp->declassoc = NONE;
           psp->state = WAITING_FOR_PRECEDENCE_SYMBOL;
-	}else if( strcmp(x,"destructor")==0 ){
+        }else if( strcmp(x,"destructor")==0 ){
           psp->state = WAITING_FOR_DESTRUCTOR_SYMBOL;
-	}else if( strcmp(x,"type")==0 ){
+        }else if( strcmp(x,"type")==0 ){
           psp->state = WAITING_FOR_DATATYPE_SYMBOL;
         }else if( strcmp(x,"fallback")==0 ){
           psp->fallback = 0;
@@ -2278,7 +2278,7 @@ to follow the previous rule.");
             "Unknown declaration keyword: \"%%%s\".",x);
           psp->errorcnt++;
           psp->state = RESYNC_AFTER_DECL_ERROR;
-	}
+        }
       }else{
         ErrorMsg(psp->filename,psp->tokenlineno,
           "Illegal declaration keyword: \"%s\".",x);
@@ -2323,10 +2323,10 @@ to follow the previous rule.");
           ErrorMsg(psp->filename,psp->tokenlineno,
             "Symbol \"%s\" has already be given a precedence.",x);
           psp->errorcnt++;
-	}else{
+        }else{
           sp->prec = psp->preccounter;
           sp->assoc = psp->declassoc;
-	}
+        }
       }else{
         ErrorMsg(psp->filename,psp->tokenlineno,
           "Can't assign a precedence to \"%s\".",x);
@@ -2594,12 +2594,12 @@ struct lemon *gp;
             if( c=='\n' ) lineno++;
             prevc = c;
             cp++;
-	  }
-	}else if( c=='/' && cp[1]=='/' ){  /* Skip C++ style comments too */
+          }
+        }else if( c=='/' && cp[1]=='/' ){  /* Skip C++ style comments too */
           cp = &cp[2];
           while( (c= *cp)!=0 && c!='\n' ) cp++;
           if( c ) lineno++;
-	}else if( c=='\'' || c=='\"' ){    /* String a character literals */
+        }else if( c=='\'' || c=='\"' ){    /* String a character literals */
           int startchar, prevc;
           startchar = c;
           prevc = 0;
@@ -2607,8 +2607,8 @@ struct lemon *gp;
             if( c=='\n' ) lineno++;
             if( prevc=='\\' ) prevc = 0;
             else              prevc = c;
-	  }
-	}
+          }
+        }
       }
       if( c==0 ){
         ErrorMsg(ps.filename,ps.tokenlineno,
@@ -2732,9 +2732,9 @@ char *suffix;
   }
   /* Skip directory */
   if (NULL == (cp = strrchr(lemp->filename, PATHSEP))) {
-	cp = lemp->filename;
+        cp = lemp->filename;
   } else {
-	cp++;
+        cp++;
   }
   strcpy(name,cp);
   cp = strrchr(name,'.');
@@ -2764,7 +2764,7 @@ char *mode;
   return fp;
 }
 
-/* Duplicate the input file without comments and without actions 
+/* Duplicate the input file without comments and without actions
 ** on rules */
 void Reprint(lemp)
 struct lemon *lemp;
@@ -2894,7 +2894,7 @@ int PrintAction(struct action *ap, FILE *fp, int indent){
         indent,ap->sp->name,ap->x.rp->index);
       break;
     case SSCONFLICT:
-      fprintf(fp,"%*s shift  %d ** Parsing conflict **", 
+      fprintf(fp,"%*s shift  %d ** Parsing conflict **",
         indent,ap->sp->name,ap->x.stp->statenum);
       break;
     case SH_RESOLVED:
@@ -3143,7 +3143,7 @@ int *lineno;
     (*lineno)++;
   }
   if (!lemp->nolinenosflag) {
-    (*lineno)++; tplt_linedir(out,*lineno,lemp->outname); 
+    (*lineno)++; tplt_linedir(out,*lineno,lemp->outname);
   }
   return;
 }
@@ -3185,8 +3185,8 @@ int *lineno;
    fputc(*cp,out);
  }
  fprintf(out,"\n"); (*lineno)++;
- if (!lemp->nolinenosflag) { 
-   (*lineno)++; tplt_linedir(out,*lineno,lemp->outname); 
+ if (!lemp->nolinenosflag) {
+   (*lineno)++; tplt_linedir(out,*lineno,lemp->outname);
  }
  fprintf(out,"}\n"); (*lineno)++;
  return;
@@ -3349,7 +3349,7 @@ PRIVATE void translate_code(struct lemon *lemp, struct rule *rp){
   }
 }
 
-/* 
+/*
 ** Generate code which executes when the rule "rp" is reduced.  Write
 ** the code to "out".  Make sure lineno stays up-to-date.
 */
@@ -3763,7 +3763,7 @@ int mhflag;     /* Output in makeheaders format if true */
   n = lemp->nstate;
   while( n>0 && lemp->sorted[n-1]->iTknOfst==NO_OFFSET ) n--;
   fprintf(out, "#define YY_SHIFT_MAX %d\n", n-1); lineno++;
-  fprintf(out, "static const %s yy_shift_ofst[] = {\n", 
+  fprintf(out, "static const %s yy_shift_ofst[] = {\n",
           minimum_size_type(mnTknOfst-1, mxTknOfst)); lineno++;
   for(i=j=0; i<n; i++){
     int ofst;
@@ -3786,7 +3786,7 @@ int mhflag;     /* Output in makeheaders format if true */
   n = lemp->nstate;
   while( n>0 && lemp->sorted[n-1]->iNtOfst==NO_OFFSET ) n--;
   fprintf(out, "#define YY_REDUCE_MAX %d\n", n-1); lineno++;
-  fprintf(out, "static const %s yy_reduce_ofst[] = {\n", 
+  fprintf(out, "static const %s yy_reduce_ofst[] = {\n",
           minimum_size_type(mnNtOfst-1, mxNtOfst)); lineno++;
   for(i=j=0; i<n; i++){
     int ofst;
@@ -3862,7 +3862,7 @@ int mhflag;     /* Output in makeheaders format if true */
   tplt_xfer(lemp->name,in,out,&lineno);
 
   /* Generate code which executes every time a symbol is popped from
-  ** the stack while processing errors or while destroying the parser. 
+  ** the stack while processing errors or while destroying the parser.
   ** (In other words, generate the %destructor actions)
   */
   if( lemp->tokendest ){
@@ -3927,7 +3927,7 @@ int mhflag;     /* Output in makeheaders format if true */
   tplt_print(out,lemp,lemp->overflow,&lineno);
   tplt_xfer(lemp->name,in,out,&lineno);
 
-  /* Generate the table of rule information 
+  /* Generate the table of rule information
   **
   ** Note: This code depends on the fact that rules are number
   ** sequentually beginning with 0.
@@ -4023,7 +4023,7 @@ struct lemon *lemp;
     for(i=1; i<lemp->nterminal; i++){
       fprintf(out,"#define %s%-30s %2d\n",prefix,lemp->symbols[i]->name,i);
     }
-    fclose(out);  
+    fclose(out);
   }
   return;
 }
@@ -4071,7 +4071,7 @@ struct lemon *lemp;
         rbest = rp;
       }
     }
- 
+
     /* Do not make a default if the number of rules to default
     ** is not at least 1 or if the wildcard token is a possible
     ** lookahead.
@@ -4281,7 +4281,7 @@ void Strsafe_init(){
   if( x1a ){
     x1a->size = 1024;
     x1a->count = 0;
-    x1a->tbl = (x1node*)malloc( 
+    x1a->tbl = (x1node*)malloc(
       (sizeof(x1node) + sizeof(x1node*))*1024 );
     if( x1a->tbl==0 ){
       free(x1a);
@@ -4446,7 +4446,7 @@ void Symbol_init(){
   if( x2a ){
     x2a->size = 128;
     x2a->count = 0;
-    x2a->tbl = (x2node*)malloc( 
+    x2a->tbl = (x2node*)malloc(
       (sizeof(x2node) + sizeof(x2node*))*128 );
     if( x2a->tbl==0 ){
       free(x2a);
@@ -4652,7 +4652,7 @@ void State_init(){
   if( x3a ){
     x3a->size = 128;
     x3a->count = 0;
-    x3a->tbl = (x3node*)malloc( 
+    x3a->tbl = (x3node*)malloc(
       (sizeof(x3node) + sizeof(x3node*))*128 );
     if( x3a->tbl==0 ){
       free(x3a);
@@ -4798,7 +4798,7 @@ void Configtable_init(){
   if( x4a ){
     x4a->size = 64;
     x4a->count = 0;
-    x4a->tbl = (x4node*)malloc( 
+    x4a->tbl = (x4node*)malloc(
       (sizeof(x4node) + sizeof(x4node*))*64 );
     if( x4a->tbl==0 ){
       free(x4a);

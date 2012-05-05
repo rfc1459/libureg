@@ -20,9 +20,9 @@ typedef struct Parse Parse;
 /* Parser status */
 struct Parse
 {
-	int parseError;
-	int nparen;
-	Regexp *ast_root;
+    int parseError;
+    int nparen;
+    Regexp *ast_root;
 };
 
 extern void *uregParserAlloc(void *(*mallocProc)(size_t));
@@ -35,46 +35,46 @@ extern void uregParserTrace(FILE *, char *);
 /* An AST node */
 struct Regexp
 {
-	int type;
-	int n;
-	int ch;
-	int lo, hi;
-	int refc;
-	Regexp *left;
-	Regexp *right;
+    int type;
+    int n;
+    int ch;
+    int lo, hi;
+    int refc;
+    Regexp *left;
+    Regexp *right;
 };
 
 /* AST node types (Regexp.type) */
 enum
 {
-	Alt = 1,
-	Cat,
-	Lit,
-	Dot,
-	Range,
-	Quest,
-	Star,
-	Plus,
-	Paren
+    Alt = 1,
+    Cat,
+    Lit,
+    Dot,
+    Range,
+    Quest,
+    Star,
+    Plus,
+    Paren
 };
 
 extern Regexp *parse(const char *);
 extern Regexp *reg(int, Regexp *, Regexp *);
 extern void reg_destroy(Regexp *);
-#define reg_incref(r)				\
-	do {							\
-		if (r)						\
-			(r)->refc++;			\
-	} while (0)
-#define reg_decref(r)				\
-	do {							\
-		if (r)						\
-		{							\
-			(r)->refc--;			\
-				if ((r)->refc <= 0)	\
-				reg_destroy(r);		\
-		}							\
-	} while (0)
+#define reg_incref(r)               \
+    do {                            \
+        if (r)                      \
+            (r)->refc++;            \
+    } while (0)
+#define reg_decref(r)               \
+    do {                            \
+        if (r)                      \
+        {                           \
+            (r)->refc--;            \
+                if ((r)->refc <= 0) \
+                reg_destroy(r);     \
+        }                           \
+    } while (0)
 
 extern Regexp *simplify_repeat(Regexp *, int, int, int);
 #if !defined(NDEBUG) && defined(UREG_TRACE)
@@ -85,31 +85,31 @@ extern void *mal(size_t);
 
 struct Prog
 {
-	Inst *start;
-	int len;
+    Inst *start;
+    int len;
 };
 
 struct Inst
 {
-	int opcode;
-	int c;
-	int n;
-	int lo, hi;
-	Inst *x;
-	Inst *y;
-	int gen;
+    int opcode;
+    int c;
+    int n;
+    int lo, hi;
+    Inst *x;
+    Inst *y;
+    int gen;
 };
 
 /* Opcodes (Inst.opcode) */
 enum
 {
-	Char = 1,
-	Match,
-	Jmp,
-	Split,
-	Any,
-	Save,
-	Rng
+    Char = 1,
+    Match,
+    Jmp,
+    Split,
+    Any,
+    Save,
+    Rng
 };
 
 extern Prog *compile(Regexp *);

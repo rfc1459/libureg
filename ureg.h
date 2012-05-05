@@ -1,4 +1,4 @@
-/** @file ureg.h 
+/** @file ureg.h
  *  @brief libureg public API.
  *
  * Copyright 2010 Matteo Panella. All Rights Reserved.
@@ -26,16 +26,16 @@ typedef struct ureg_regexp_t *ureg_regexp;
  */
 typedef enum ureg_error_t
 {
-	/** @brief No error */
-	UREG_NOERROR = 0,
-	/** @brief Invalid argument (NULL pointer) */	
-	UREG_ERR_NULL,
-	/** @brief Out of memory */
-	UREG_ERR_NOMEM,
-	/** @brief Syntax error */
-	UREG_ERR_SYNTAX,
-	/** @brief Compiler error, please report this */
-	UREG_ERR_COMPILE
+    /** @brief No error */
+    UREG_NOERROR = 0,
+    /** @brief Invalid argument (NULL pointer) */
+    UREG_ERR_NULL,
+    /** @brief Out of memory */
+    UREG_ERR_NOMEM,
+    /** @brief Syntax error */
+    UREG_ERR_SYNTAX,
+    /** @brief Compiler error, please report this */
+    UREG_ERR_COMPILE
 } ureg_error_t;
 
 /** @brief Last error code */
