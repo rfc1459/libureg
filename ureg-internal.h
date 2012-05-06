@@ -63,16 +63,18 @@ extern Regexp *reg(int, Regexp *, Regexp *);
 extern void reg_destroy(Regexp *);
 #define reg_incref(r)               \
     do {                            \
-        if (r)                      \
-            (r)->refc++;            \
+        Regexp *lr = (r);           \
+        if (lr)                     \
+            lr->refc++;             \
     } while (0)
 #define reg_decref(r)               \
     do {                            \
-        if (r)                      \
+        Regexp *lr = (r);           \
+        if (lr)                     \
         {                           \
-            (r)->refc--;            \
-                if ((r)->refc <= 0) \
-                reg_destroy(r);     \
+            lr->refc--;             \
+            if (lr->refc <= 0)      \
+                reg_destroy(lr);    \
         }                           \
     } while (0)
 
